@@ -1,0 +1,181 @@
+{
+  "version": "1.0",
+  "lastModified": "2025-06-06T00:00:00Z",
+  "nodes": {
+    "root": {
+      "id": "root",
+      "type": "question",
+      "subsystem": null,
+      "text": "Which subsystem is having the issue?",
+      "answers": [
+        { "label": "Power / PDM", "next": "power_001" },
+        { "label": "Sensors", "next": "sensor_001" },
+        { "label": "CAN bus", "next": "can_001" },
+        { "label": "Shutdown circuit", "next": "shutdown_001" },
+        { "label": "Ethernet / DAQ", "next": "eth_001" }
+      ]
+    },
+    "power_001": {
+      "id": "power_001",
+      "type": "question",
+      "subsystem": "power",
+      "text": "Is the main 40A fuse blown?",
+      "answers": [
+        { "label": "Yes", "next": "power_002" },
+        { "label": "No", "next": "power_003" }
+      ]
+    },
+    "power_002": {
+      "id": "power_002",
+      "type": "action",
+      "subsystem": "power",
+      "text": "Before replacing the fuse, probe continuity between chassis ground and the positive PDM input rail to check for a short.",
+      "confirmation": "Done — no short found",
+      "next": "power_sol_001"
+    },
+    "power_003": {
+      "id": "power_003",
+      "type": "question",
+      "subsystem": "power",
+      "text": "Is the PDM fault light on?",
+      "answers": [
+        { "label": "Yes", "next": "power_deadend_001" },
+        { "label": "No", "next": "power_deadend_001" }
+      ]
+    },
+    "power_sol_001": {
+      "id": "power_sol_001",
+      "type": "solution",
+      "subsystem": "power",
+      "text": "Replace the 40A main fuse with a spare from the spares bag. Re-test ignition-on.",
+      "tags": ["fuse", "pdm"],
+      "ifUnsolved": "power_deadend_001"
+    },
+    "power_deadend_001": {
+      "id": "power_deadend_001",
+      "type": "solution",
+      "subsystem": "power",
+      "text": "No recorded fix for this power failure path.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "sensor_001": {
+      "id": "sensor_001",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Which sensor is affected?",
+      "answers": [
+        { "label": "APPS", "next": "sensor_002" },
+        { "label": "TPS", "next": "sensor_002" },
+        { "label": "Other", "next": "sensor_002" }
+      ]
+    },
+    "sensor_002": {
+      "id": "sensor_002",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is the signal reading 0V or stuck at a fixed value?",
+      "answers": [
+        { "label": "0V", "next": "sensor_deadend_001" },
+        { "label": "Stuck", "next": "sensor_deadend_001" },
+        { "label": "Not sure", "next": "sensor_deadend_001" }
+      ]
+    },
+    "sensor_deadend_001": {
+      "id": "sensor_deadend_001",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "No recorded fix for this sensor failure path.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "can_001": {
+      "id": "can_001",
+      "type": "question",
+      "subsystem": "can",
+      "text": "Which node is missing from the bus?",
+      "answers": [
+        { "label": "ECU", "next": "can_002" },
+        { "label": "DAQ / logger", "next": "can_002" },
+        { "label": "Multiple / unknown", "next": "can_002" }
+      ]
+    },
+    "can_002": {
+      "id": "can_002",
+      "type": "question",
+      "subsystem": "can",
+      "text": "Is the bus properly terminated at both ends?",
+      "answers": [
+        { "label": "Yes", "next": "can_deadend_001" },
+        { "label": "No", "next": "can_deadend_001" },
+        { "label": "Not sure", "next": "can_deadend_001" }
+      ]
+    },
+    "can_deadend_001": {
+      "id": "can_deadend_001",
+      "type": "solution",
+      "subsystem": "can",
+      "text": "No recorded fix for this CAN failure path.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "shutdown_001": {
+      "id": "shutdown_001",
+      "type": "question",
+      "subsystem": "shutdown",
+      "text": "Which shutdown segment is suspect?",
+      "answers": [
+        { "label": "BOTS", "next": "shutdown_002" },
+        { "label": "BSPD", "next": "shutdown_002" },
+        { "label": "IMD / HV", "next": "shutdown_002" }
+      ]
+    },
+    "shutdown_002": {
+      "id": "shutdown_002",
+      "type": "question",
+      "subsystem": "shutdown",
+      "text": "Is the fault latched or intermittent?",
+      "answers": [
+        { "label": "Latched", "next": "shutdown_deadend_001" },
+        { "label": "Intermittent", "next": "shutdown_deadend_001" }
+      ]
+    },
+    "shutdown_deadend_001": {
+      "id": "shutdown_deadend_001",
+      "type": "solution",
+      "subsystem": "shutdown",
+      "text": "No recorded fix for this shutdown circuit failure path.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "eth_001": {
+      "id": "eth_001",
+      "type": "question",
+      "subsystem": "eth",
+      "text": "Is the Ethernet link light on at the DAQ?",
+      "answers": [
+        { "label": "Yes", "next": "eth_002" },
+        { "label": "No", "next": "eth_002" }
+      ]
+    },
+    "eth_002": {
+      "id": "eth_002",
+      "type": "question",
+      "subsystem": "eth",
+      "text": "Is the DAQ on the correct subnet?",
+      "answers": [
+        { "label": "Yes", "next": "eth_deadend_001" },
+        { "label": "No", "next": "eth_deadend_001" },
+        { "label": "Not sure", "next": "eth_deadend_001" }
+      ]
+    },
+    "eth_deadend_001": {
+      "id": "eth_deadend_001",
+      "type": "solution",
+      "subsystem": "eth",
+      "text": "No recorded fix for this Ethernet / DAQ failure path.",
+      "tags": [],
+      "ifUnsolved": null
+    }
+  }
+}

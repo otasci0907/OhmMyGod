@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ohm My God — FSAE Electrical Diagnostics</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4f;
+      --text: #e8edf4;
+      --muted: #8b9cb3;
+      --accent: #3b82f6;
+      --green: #22c55e;
+      --green-bg: rgba(34, 197, 94, 0.12);
+      --amber: #f59e0b;
+      --amber-bg: rgba(245, 158, 11, 0.12);
+      --red: #ef4444;
+      --grey-bg: rgba(139, 156, 179, 0.12);
+      --radius: 10px;
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .brand {
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand span { color: var(--accent); }
+
+    nav {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    nav button {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 0.45rem 0.9rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+
+    nav button:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+    nav button.active {
+      color: var(--text);
+      border-color: var(--border);
+      background: var(--bg);
+    }
+
+    .lead-only { display: none; }
+    body.lead-mode .lead-only { display: inline-flex; }
+
+    .mode-toggle {
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius);
+      background: transparent;
+      font: inherit;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
+    .breadcrumb {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 1rem;
+      word-break: break-all;
+    }
+
+    .subsystem-badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: var(--border);
+      color: var(--muted);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      margin-bottom: 0.75rem;
+    }
+
+    .node-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      background: var(--surface);
+    }
+
+    .node-card.question .node-text { font-size: 1.25rem; font-weight: 600; }
+
+    .node-card.action {
+      background: var(--amber-bg);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+
+    .node-card.solution {
+      background: var(--green-bg);
+      border-color: rgba(34, 197, 94, 0.35);
+    }
+
+    .node-card.dead-end {
+      background: var(--grey-bg);
+      border-color: var(--border);
+    }
+
+    .node-text { margin-bottom: 1.25rem; }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-bottom: 1rem;
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      color: var(--muted);
+    }
+
+    .btn-row { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    button.btn {
+      font: inherit;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    button.btn:hover { border-color: var(--accent); }
+
+    button.btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      text-align: center;
+    }
+
+    button.btn-success {
+      background: var(--green);
+      border-color: var(--green);
+      color: #fff;
+      text-align: center;
+    }
+
+    button.btn-danger {
+      background: transparent;
+      border-color: var(--red);
+      color: var(--red);
+      text-align: center;
+    }
+
+    .btn-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .session-actions {
+      margin-top: 1.25rem;
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .session-actions button {
+      font: inherit;
+      font-size: 0.85rem;
+      padding: 0.45rem 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .session-actions button:hover { color: var(--text); }
+
+    .placeholder-panel {
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .filters input, .filters select {
+      font: inherit;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius);
+    }
+
+    .case-list { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .case-item {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      overflow: hidden;
+    }
+
+    .case-header {
+      padding: 0.75rem 1rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+      align-items: baseline;
+    }
+
+    .case-header:hover { background: rgba(255,255,255,0.02); }
+
+    .case-meta { font-size: 0.78rem; color: var(--muted); }
+
+    .case-body {
+      display: none;
+      padding: 0 1rem 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    .case-item.open .case-body { display: block; padding-top: 0.75rem; }
+
+    .status-pill {
+      font-size: 0.7rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      padding: 2rem;
+    }
+
+    .error-banner {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--red);
+      color: #fca5a5;
+      padding: 0.75rem 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .storage-badge {
+      font-size: 0.72rem;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .storage-badge.writable { color: var(--green); border-color: rgba(34, 197, 94, 0.4); }
+
+    .settings-btn {
+      font-size: 0.8rem;
+      color: var(--muted);
+      cursor: pointer;
+      border: 1px solid var(--border);
+      padding: 0.35rem 0.7rem;
+      border-radius: var(--radius);
+      background: transparent;
+      font: inherit;
+    }
+
+    .settings-btn:hover { color: var(--text); }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      z-index: 100;
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: min(520px, 100%);
+      max-height: 90vh;
+      overflow: auto;
+      padding: 1.25rem;
+    }
+
+    .modal h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      font: inherit;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius);
+    }
+
+    .form-group textarea {
+      min-height: 5rem;
+      resize: vertical;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .log-form-card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .log-form-card .form-intro {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+
+    .session-actions.hidden { display: none; }
+
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .radio-group label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .radio-group input { margin-top: 0.2rem; }
+
+    .form-section {
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+      margin-top: 1rem;
+    }
+
+    .form-section h3 {
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      color: var(--muted);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 1.25rem;
+    }
+
+    .form-actions button {
+      font: inherit;
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .form-actions button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .form-hint {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+
+    .form-status {
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+      min-height: 1.25rem;
+    }
+
+    .form-status.success { color: var(--green); }
+    .form-status.error { color: #fca5a5; }
+
+    .wizard-steps {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .wizard-steps span.active { color: var(--accent); font-weight: 600; }
+
+    .review-card, .proposal-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .review-card h3, .proposal-card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .path-preview {
+      font-size: 0.78rem;
+      color: var(--muted);
+      word-break: break-all;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      background: var(--bg);
+      border-radius: 6px;
+    }
+
+    .review-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .review-actions button {
+      font: inherit;
+      font-size: 0.82rem;
+      padding: 0.4rem 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+
+    .review-actions button.approve { border-color: var(--green); color: var(--green); }
+    .review-actions button.reject { border-color: var(--red); color: var(--red); }
+
+    .edit-form { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+
+    .answer-field-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .answer-field-row input { flex: 1; }
+
+    .tree-node-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      margin-bottom: 0.5rem;
+    }
+
+    .tree-node-row.retired { opacity: 0.55; }
+
+    .tree-node-row .node-id {
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-family: ui-monospace, monospace;
+    }
+
+    .maintenance-section {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .maintenance-section h3 {
+      font-size: 0.95rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .checklist-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+
+    .checklist-item:last-child { border-bottom: none; }
+
+    .count-badge {
+      font-size: 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .count-badge.alert { border-color: var(--amber); color: var(--amber); }
+
+    .case-lead-actions {
+      margin-top: 0.75rem;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .case-lead-actions button {
+      font: inherit;
+      font-size: 0.78rem;
+      padding: 0.35rem 0.6rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">Ohm <span>My God</span></div>
+    <nav>
+      <button type="button" data-panel="diagnose" class="active">Diagnose</button>
+      <button type="button" data-panel="cases">Browse Cases</button>
+      <button type="button" data-panel="review" class="lead-only">Review Queue</button>
+      <button type="button" data-panel="tree" class="lead-only">Edit Tree</button>
+      <button type="button" data-panel="maintenance" class="lead-only">Maintenance</button>
+    </nav>
+    <div class="header-actions">
+      <span class="storage-badge" id="storage-badge">Loading…</span>
+      <button type="button" class="settings-btn lead-only" id="settings-btn">Settings</button>
+      <button type="button" class="mode-toggle" id="mode-toggle">Member mode</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="load-error" class="error-banner" hidden></div>
+    <div id="folder-prompt" class="error-banner" hidden style="border-color: var(--amber); color: #fcd34d; background: rgba(245, 158, 11, 0.12);">
+      Shared-folder mode is enabled but no folder is connected.
+      <button type="button" class="btn btn-primary" id="btn-connect-folder" style="margin-top:0.75rem;width:auto;display:inline-block;padding:0.5rem 1rem;">Connect shared folder</button>
+    </div>
+
+    <!-- Session panel -->
+    <section id="panel-diagnose" class="panel active">
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="session-root"></div>
+      <div class="session-actions">
+        <button type="button" id="btn-restart">Restart session</button>
+        <button type="button" id="btn-back" disabled>Go back</button>
+      </div>
+    </section>
+
+    <!-- Browse cases panel -->
+    <section id="panel-cases" class="panel">
+      <div class="filters">
+        <input type="search" id="case-search" placeholder="Search problems, fixes, tags…">
+        <select id="case-subsystem">
+          <option value="">All subsystems</option>
+          <option value="power">Power</option>
+          <option value="sensor">Sensors</option>
+          <option value="can">CAN</option>
+          <option value="shutdown">Shutdown</option>
+          <option value="eth">Ethernet / DAQ</option>
+        </select>
+        <select id="case-status">
+          <option value="">All statuses</option>
+          <option value="unreviewed">Unreviewed</option>
+          <option value="promoted">Promoted</option>
+          <option value="one-off">One-off</option>
+          <option value="resolved-by-tree">Resolved by tree</option>
+        </select>
+      </div>
+      <div id="case-list" class="case-list"></div>
+    </section>
+
+    <!-- Review panel (lead only) -->
+    <section id="panel-review" class="panel">
+      <div id="review-root"></div>
+    </section>
+
+    <!-- Tree editor (lead only) -->
+    <section id="panel-tree" class="panel">
+      <div class="filters">
+        <input type="search" id="tree-search" placeholder="Search node ID or text…">
+        <select id="tree-subsystem">
+          <option value="">All subsystems</option>
+          <option value="power">Power</option>
+          <option value="sensor">Sensors</option>
+          <option value="can">CAN</option>
+          <option value="shutdown">Shutdown</option>
+          <option value="eth">Ethernet / DAQ</option>
+        </select>
+        <label class="toggle-row" style="font-size:0.85rem;">
+          <input type="checkbox" id="tree-show-retired">
+          <span>Show retired</span>
+        </label>
+      </div>
+      <div id="tree-editor-root"></div>
+    </section>
+
+    <!-- Maintenance dashboard (lead only) -->
+    <section id="panel-maintenance" class="panel">
+      <div id="maintenance-root"></div>
+    </section>
+  </main>
+
+  <div class="modal-overlay" id="settings-modal" hidden>
+    <div class="modal" role="dialog" aria-labelledby="settings-title">
+      <h2 id="settings-title">Storage settings</h2>
+
+      <div class="form-group">
+        <label>Storage backend</label>
+        <div class="radio-group">
+          <label>
+            <input type="radio" name="storage-mode" value="fetch">
+            <span><strong>Local (read-only)</strong> — loads JSON via HTTP. Use for diagnosis only; writes need another backend.</span>
+          </label>
+          <label>
+            <input type="radio" name="storage-mode" value="github">
+            <span><strong>GitHub</strong> — read/write via GitHub Contents API (recommended for GitHub Pages).</span>
+          </label>
+          <label>
+            <input type="radio" name="storage-mode" value="filesystem">
+            <span><strong>Shared folder</strong> — read/write via Chrome File System Access API (offline shared drive).</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section" id="github-settings">
+        <h3>GitHub repository</h3>
+        <div class="form-group">
+          <label for="github-owner">Owner</label>
+          <input type="text" id="github-owner" placeholder="your-org-or-username" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="github-repo">Repository</label>
+          <input type="text" id="github-repo" placeholder="ohmmygod" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="github-branch">Branch</label>
+          <input type="text" id="github-branch" placeholder="main" autocomplete="off">
+        </div>
+        <div class="form-group">
+          <label for="github-token">Personal access token</label>
+          <input type="password" id="github-token" placeholder="ghp_…" autocomplete="off">
+          <p class="form-hint">Repo scope required. Stored in this browser only — never commit tokens.</p>
+        </div>
+        <button type="button" id="btn-test-github">Test connection</button>
+      </div>
+
+      <div class="form-section" id="filesystem-settings">
+        <h3>Shared folder</h3>
+        <p class="form-hint">Select the folder containing tree.json, cases.json, pending.json, and changelog.json.</p>
+        <button type="button" id="btn-pick-folder">Grant folder access</button>
+      </div>
+
+      <div class="form-section">
+        <h3>Lead PIN</h3>
+        <div class="form-group">
+          <label for="lead-pin">New PIN (leave blank to keep current)</label>
+          <input type="password" id="lead-pin" placeholder="••••" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div class="form-status" id="settings-status"></div>
+
+      <div class="form-actions">
+        <button type="button" class="primary" id="btn-save-settings">Save</button>
+        <button type="button" id="btn-reload-data">Reload data</button>
+        <button type="button" id="btn-close-settings">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="tree-edit-modal" hidden>
+    <div class="modal" role="dialog" aria-labelledby="tree-edit-title">
+      <h2 id="tree-edit-title">Edit node</h2>
+      <div id="tree-edit-body"></div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/tree-ops.js"></script>
+  <script src="js/lead-tools.js"></script>
+  <script>
+    const STORAGE_KEYS = {
+      leadPin: "ohmg_lead_pin",
+      isLead: "ohmg_is_lead",
+      submitterName: "ohmg_submitter_name"
+    };
+
+    const DEFAULT_LEAD_PIN = "1234";
+
+    const app = {
+      tree: null,
+      cases: [],
+      pending: [],
+      changelog: [],
+      session: {
+        currentNodeId: "root",
+        path: [],
+        solutionsAttempted: [],
+        subsystem: null,
+        history: ["root"]
+      },
+      proposal: null
+    };
+
+    function updateStorageBadge() {
+      const status = OhmgStorage.getStatus();
+      const badge = document.getElementById("storage-badge");
+      badge.textContent = status.label;
+      badge.classList.toggle("writable", status.writable);
+      updateFolderPrompt();
+    }
+
+    async function updateFolderPrompt() {
+      const config = OhmgStorage.getConfig();
+      const prompt = document.getElementById("folder-prompt");
+      if (config.mode !== "filesystem") {
+        prompt.hidden = true;
+        return;
+      }
+      const handle = await OhmgStorage.getDirHandle();
+      prompt.hidden = Boolean(handle);
+    }
+
+    async function init() {
+      try {
+        await OhmgStorage.prepare();
+        const data = await OhmgStorage.loadAll();
+        app.tree = data.tree;
+        app.cases = data.cases;
+        app.pending = data.pending;
+        app.changelog = data.changelog;
+        restoreLeadMode();
+        updateStorageBadge();
+        renderSession();
+        renderCases();
+        renderReviewQueue();
+        renderTreeEditor();
+        renderMaintenance();
+      } catch (err) {
+        showError(err.message + " — run `npm run serve` and open http://localhost:8080");
+        updateStorageBadge();
+      }
+    }
+
+    async function persistFile(filename, data, message) {
+      await OhmgStorage.write(filename, data, message);
+      updateStorageBadge();
+    }
+
+    async function appendToFile(filename, item, message) {
+      await OhmgStorage.append(filename, item, message);
+      updateStorageBadge();
+    }
+
+    async function reloadAppData() {
+      const data = await OhmgStorage.reloadFromSource();
+      app.tree = data.tree;
+      app.cases = data.cases;
+      app.pending = data.pending;
+      app.changelog = data.changelog;
+      updateStorageBadge();
+      renderCases();
+      renderReviewQueue();
+      renderTreeEditor();
+      renderMaintenance();
+    }
+
+    function isLeadMode() {
+      return localStorage.getItem(STORAGE_KEYS.isLead) === "true";
+    }
+
+    async function saveTreeAndChangelog(changelogEntry) {
+      app.changelog.push(changelogEntry);
+      await persistAllData([
+        { name: "tree.json", data: app.tree, message: changelogEntry.description },
+        { name: "changelog.json", data: app.changelog, message: changelogEntry.description }
+      ]);
+    }
+
+    async function updateCaseStatus(caseId, status) {
+      const caseEntry = app.cases.find((c) => c.id === caseId);
+      if (!caseEntry) return;
+      caseEntry.status = status;
+      caseEntry.reviewedAt = new Date().toISOString();
+      await persistFile("cases.json", app.cases, `Mark ${caseId} as ${status}`);
+      renderCases();
+      renderMaintenance();
+    }
+
+    function renderTreeEditor() {
+      const root = document.getElementById("tree-editor-root");
+      if (!root) return;
+
+      if (!isLeadMode()) {
+        root.innerHTML = `<div class="placeholder-panel">Enter lead mode to edit the tree.</div>`;
+        return;
+      }
+
+      if (!OhmgStorage.canWrite()) {
+        root.innerHTML = `<div class="placeholder-panel">Configure writable storage to edit the tree.</div>`;
+        return;
+      }
+
+      const filter = {
+        subsystem: document.getElementById("tree-subsystem")?.value || "",
+        search: document.getElementById("tree-search")?.value || ""
+      };
+      const showRetired = document.getElementById("tree-show-retired")?.checked;
+
+      const nodes = OhmgLeadTools.listNodes(app.tree, filter).filter(([id, node]) => {
+        if (!showRetired && node.retired) return false;
+        return true;
+      });
+
+      if (!nodes.length) {
+        root.innerHTML = `<div class="empty-state">No nodes match your filter.</div>`;
+        return;
+      }
+
+      root.innerHTML = nodes
+        .map(([id, node]) => {
+          const retired = node.retired ? `<span class="status-pill">retired</span>` : "";
+          const preview = node.text?.slice(0, 80) + (node.text?.length > 80 ? "…" : "");
+          return `
+            <div class="tree-node-row ${node.retired ? "retired" : ""}">
+              <div>
+                <div class="node-id">${escapeHtml(id)} · ${escapeHtml(node.type)} ${retired}</div>
+                <div class="case-meta">${escapeHtml(node.subsystem || "—")} · ${escapeHtml(preview)}</div>
+              </div>
+              <button type="button" data-edit-node="${escapeHtml(id)}" style="font:inherit;font-size:0.82rem;padding:0.35rem 0.65rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);cursor:pointer;">Edit</button>
+            </div>`;
+        })
+        .join("");
+
+      root.querySelectorAll("[data-edit-node]").forEach((btn) => {
+        btn.addEventListener("click", () => openTreeEditModal(btn.dataset.editNode));
+      });
+    }
+
+    function openTreeEditModal(nodeId) {
+      const node = app.tree.nodes[nodeId];
+      if (!node) return;
+
+      const modal = document.getElementById("tree-edit-modal");
+      const body = document.getElementById("tree-edit-body");
+      document.getElementById("tree-edit-title").textContent = `Edit ${nodeId}`;
+
+      const nodeIds = Object.keys(app.tree.nodes).sort();
+
+      let typeFields = "";
+      if (node.type === "question") {
+        const answers = (node.answers || [])
+          .map(
+            (a, i) => `
+            <div class="answer-field-row">
+              <input type="text" class="edit-q-label" value="${escapeHtml(a.label)}" placeholder="Answer label">
+              <select class="edit-q-next">${nodeIds.map((nid) => `<option value="${escapeHtml(nid)}" ${nid === a.next ? "selected" : ""}>${escapeHtml(nid)}</option>`).join("")}</select>
+            </div>`
+          )
+          .join("");
+        typeFields = `
+          <div class="form-group"><label>Answers</label>${answers}</div>`;
+      } else if (node.type === "action") {
+        typeFields = `
+          <div class="form-group"><label for="edit-confirmation">Confirmation label</label>
+            <input type="text" id="edit-confirmation" value="${escapeHtml(node.confirmation || "Done")}"></div>
+          <div class="form-group"><label for="edit-next">Next node</label>
+            <select id="edit-next">${nodeIds.map((id) => `<option value="${escapeHtml(id)}" ${id === node.next ? "selected" : ""}>${escapeHtml(id)}</option>`).join("")}</select></div>`;
+      } else if (node.type === "solution") {
+        const nullSelected = node.ifUnsolved === null ? "selected" : "";
+        typeFields = `
+          <div class="form-group"><label for="edit-tags">Tags</label>
+            <input type="text" id="edit-tags" value="${escapeHtml((node.tags || []).join(", "))}"></div>
+          <div class="form-group"><label for="edit-if-unsolved">If unsolved →</label>
+            <select id="edit-if-unsolved">
+              <option value="" ${nullSelected}>(dead end — null)</option>
+              ${nodeIds.filter((id) => id !== nodeId).map((id) => `<option value="${escapeHtml(id)}" ${id === node.ifUnsolved ? "selected" : ""}>${escapeHtml(id)}</option>`).join("")}
+            </select></div>`;
+      }
+
+      const refs = OhmgLeadTools.findReferrers(app.tree.nodes, nodeId);
+      const defaultRedirect = OhmgLeadTools.getDefaultRedirect(node);
+      const retireSection =
+        nodeId === "root" || node.retired
+          ? ""
+          : `
+          <div class="form-section">
+            <h3>Retire node</h3>
+            <p class="form-hint">${refs.length} node(s) point here. Retiring never deletes the ID — case logs keep working.</p>
+            ${refs.length ? `<div class="form-group"><label for="retire-redirect">Redirect pointers to</label>
+              <select id="retire-redirect">${nodeIds.filter((id) => id !== nodeId).map((id) => `<option value="${escapeHtml(id)}" ${id === defaultRedirect ? "selected" : ""}>${escapeHtml(id)}</option>`).join("")}</select></div>` : ""}
+            <button type="button" id="btn-retire-node" style="font:inherit;padding:0.5rem 0.9rem;border-radius:8px;border:1px solid var(--red);background:transparent;color:var(--red);cursor:pointer;">Retire this node</button>
+          </div>`;
+
+      body.innerHTML = `
+        <div class="form-group"><label for="edit-text">Text</label>
+          <textarea id="edit-text">${escapeHtml(node.text)}</textarea></div>
+        ${typeFields}
+        <div class="form-status" id="tree-edit-status"></div>
+        <div class="form-actions">
+          <button type="button" class="primary" id="btn-save-node">Save changes</button>
+          <button type="button" id="btn-close-tree-edit">Cancel</button>
+        </div>
+        ${retireSection}`;
+
+      modal.hidden = false;
+      modal.classList.add("open");
+
+      document.getElementById("btn-close-tree-edit").addEventListener("click", closeTreeEditModal);
+      document.getElementById("btn-save-node").addEventListener("click", () => saveTreeNode(nodeId));
+      document.getElementById("btn-retire-node")?.addEventListener("click", () => retireTreeNode(nodeId));
+    }
+
+    function closeTreeEditModal() {
+      const modal = document.getElementById("tree-edit-modal");
+      modal.classList.remove("open");
+      modal.hidden = true;
+    }
+
+    async function saveTreeNode(nodeId) {
+      const node = app.tree.nodes[nodeId];
+      const statusEl = document.getElementById("tree-edit-status");
+      const text = document.getElementById("edit-text").value.trim();
+      if (!text) {
+        statusEl.textContent = "Text is required.";
+        statusEl.className = "form-status error";
+        return;
+      }
+
+      let edits = { text };
+      if (node.type === "question") {
+        edits.answers = [...document.querySelectorAll(".edit-q-label")].map((el, i) => ({
+          label: el.value.trim(),
+          next: document.querySelectorAll(".edit-q-next")[i]?.value
+        }));
+        if (edits.answers.some((a) => !a.label)) {
+          statusEl.textContent = "All answer labels are required.";
+          statusEl.className = "form-status error";
+          return;
+        }
+      } else if (node.type === "action") {
+        edits.confirmation = document.getElementById("edit-confirmation").value.trim() || "Done";
+        edits.next = document.getElementById("edit-next").value;
+      } else if (node.type === "solution") {
+        edits.tags = OhmgLeadTools.parseTags(document.getElementById("edit-tags").value);
+        const unsolved = document.getElementById("edit-if-unsolved").value;
+        edits.ifUnsolved = unsolved || null;
+      }
+
+      app.tree.nodes[nodeId] = OhmgLeadTools.applyNodeEdits(node, edits);
+      OhmgLeadTools.bumpVersion(app.tree);
+
+      try {
+        await saveTreeAndChangelog(
+          OhmgLeadTools.createChangelogEntry("edited", `Edited node ${nodeId}`, { nodeId })
+        );
+        closeTreeEditModal();
+        renderTreeEditor();
+        renderSession();
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = "form-status error";
+      }
+    }
+
+    async function retireTreeNode(nodeId) {
+      if (!confirm(`Retire node ${nodeId}? It will be skipped during diagnosis but preserved for case logs.`)) return;
+
+      const redirectTo = document.getElementById("retire-redirect")?.value || OhmgLeadTools.getDefaultRedirect(app.tree.nodes[nodeId]);
+      const statusEl = document.getElementById("tree-edit-status");
+
+      try {
+        OhmgLeadTools.retireNode(app.tree, nodeId, redirectTo);
+        await saveTreeAndChangelog(
+          OhmgLeadTools.createChangelogEntry("retired", `Retired node ${nodeId}${redirectTo ? ` → ${redirectTo}` : ""}`, { nodeId })
+        );
+        closeTreeEditModal();
+        renderTreeEditor();
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = "form-status error";
+      }
+    }
+
+    function renderMaintenance() {
+      const root = document.getElementById("maintenance-root");
+      if (!root) return;
+
+      if (!isLeadMode()) {
+        root.innerHTML = `<div class="placeholder-panel">Enter lead mode to view maintenance tasks.</div>`;
+        return;
+      }
+
+      const summary = OhmgLeadTools.getMaintenanceSummary(app);
+
+      const hotspotHtml = summary.hotspots.length
+        ? summary.hotspots
+            .map(
+              (h) =>
+                `<li><code>${escapeHtml(h.nodeId)}</code> — ${h.count} logged case(s) <button type="button" data-goto-node="${escapeHtml(h.nodeId)}" style="font:inherit;font-size:0.78rem;margin-left:0.5rem;color:var(--accent);background:none;border:none;cursor:pointer;">Edit tree</button></li>`
+            )
+            .join("")
+        : "<li>No dead-end hotspots yet (needs 3+ cases per node).</li>";
+
+      const failedHtml = summary.failedSolutions.length
+        ? summary.failedSolutions
+            .map((s) => `<li><code>${escapeHtml(s.nodeId)}</code> — failed in ${s.count} session(s)</li>`)
+            .join("")
+        : "<li>No frequently-failing solutions detected.</li>";
+
+      root.innerHTML = `
+        <div class="maintenance-section">
+          <h3>Monthly review checklist</h3>
+          <div class="checklist-item">
+            <span>Process pending proposals</span>
+            <span><span class="count-badge ${summary.pendingCount ? "alert" : ""}">${summary.pendingCount}</span>
+            <button type="button" data-goto-panel="review" style="font:inherit;margin-left:0.5rem;font-size:0.82rem;cursor:pointer;">Open queue</button></span>
+          </div>
+          <div class="checklist-item">
+            <span>Review unreviewed cases</span>
+            <span><span class="count-badge ${summary.unreviewedCount ? "alert" : ""}">${summary.unreviewedCount}</span>
+            <button type="button" data-goto-panel="cases" style="font:inherit;margin-left:0.5rem;font-size:0.82rem;cursor:pointer;">Browse cases</button></span>
+          </div>
+          <div class="checklist-item">
+            <span>Tree version</span>
+            <span class="count-badge">v${escapeHtml(summary.treeVersion)}</span>
+          </div>
+          <div class="checklist-item">
+            <span>Run validation before deploy</span>
+            <span class="form-hint"><code>npm run validate</code></span>
+          </div>
+        </div>
+
+        <div class="maintenance-section">
+          <h3>Dead-end hotspots (3+ cases)</h3>
+          <ul style="padding-left:1.25rem;color:var(--muted);font-size:0.9rem;">${hotspotHtml}</ul>
+          <p class="form-hint" style="margin-top:0.5rem;">Prioritize adding branches at these nodes — the case log drives where depth gets added.</p>
+        </div>
+
+        <div class="maintenance-section">
+          <h3>Solutions often tried but not fixing</h3>
+          <ul style="padding-left:1.25rem;color:var(--muted);font-size:0.9rem;">${failedHtml}</ul>
+          <p class="form-hint" style="margin-top:0.5rem;">These solution nodes may have incorrect text — review in Edit Tree.</p>
+        </div>
+
+        ${
+          summary.unreviewedCases.length
+            ? `<div class="maintenance-section"><h3>Unreviewed cases</h3>${summary.unreviewedCases
+                .slice(0, 10)
+                .map(
+                  (c) => `
+              <div class="tree-node-row" style="margin-bottom:0.5rem;">
+                <div>
+                  <strong>${escapeHtml(c.problemDescription?.slice(0, 60) || c.id)}</strong>
+                  <div class="case-meta">${escapeHtml(c.id)} · ${escapeHtml(c.submittedBy)}</div>
+                </div>
+                <div>
+                  <button type="button" data-case-one-off="${escapeHtml(c.id)}" style="font:inherit;font-size:0.78rem;padding:0.3rem 0.55rem;border-radius:8px;border:1px solid var(--border);background:var(--bg);cursor:pointer;">One-off</button>
+                </div>
+              </div>`
+                )
+                .join("")}</div>`
+            : ""
+        }`;
+
+      root.querySelectorAll("[data-goto-panel]").forEach((btn) => {
+        btn.addEventListener("click", () => switchPanel(btn.dataset.gotoPanel));
+      });
+
+      root.querySelectorAll("[data-goto-node]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          switchPanel("tree");
+          openTreeEditModal(btn.dataset.gotoNode);
+        });
+      });
+
+      root.querySelectorAll("[data-case-one-off]").forEach((btn) => {
+        btn.addEventListener("click", () => updateCaseStatus(btn.dataset.caseOneOff, "one-off"));
+      });
+    }
+
+    function showError(msg) {
+      const el = document.getElementById("load-error");
+      el.textContent = msg;
+      el.hidden = false;
+    }
+
+    function restoreLeadMode() {
+      if (localStorage.getItem(STORAGE_KEYS.isLead) === "true") {
+        document.body.classList.add("lead-mode");
+        document.getElementById("mode-toggle").textContent = "Lead mode";
+      }
+    }
+
+    function getNode(id) {
+      return app.tree?.nodes?.[id] ?? null;
+    }
+
+    function isDeadEnd(node) {
+      return node.type === "solution" && node.ifUnsolved === null;
+    }
+
+    function generateCaseId() {
+      let max = 0;
+      for (const c of app.cases) {
+        const match = /^case_(\d+)$/.exec(c.id);
+        if (match) max = Math.max(max, parseInt(match[1], 10));
+      }
+      return `case_${String(max + 1).padStart(3, "0")}`;
+    }
+
+    function parseTags(input) {
+      return String(input || "")
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+    }
+
+    function buildCasePath() {
+      return [...app.session.path, app.session.currentNodeId];
+    }
+
+    function setSessionActionsVisible(visible) {
+      document.querySelector(".session-actions").classList.toggle("hidden", !visible);
+    }
+
+    async function saveCase(caseEntry) {
+      await appendToFile("cases.json", caseEntry, `Log case ${caseEntry.id}`);
+      app.cases.push(caseEntry);
+      renderCases();
+    }
+
+    function renderSession() {
+      setSessionActionsVisible(true);
+      const node = getNode(app.session.currentNodeId);
+      const root = document.getElementById("session-root");
+      const breadcrumb = document.getElementById("breadcrumb");
+
+      if (!node) {
+        root.innerHTML = '<div class="error-banner">Node not found. Restart the session.</div>';
+        return;
+      }
+
+      if (node.retired) {
+        root.innerHTML = '<div class="node-card dead-end"><p class="node-text">This step has been retired from the tree. Contact the electrical lead.</p></div>';
+        return;
+      }
+
+      breadcrumb.textContent = app.session.path.length
+        ? "Path: " + app.session.path.join(" → ")
+        : "Starting diagnostic session";
+
+      if (node.subsystem && !app.session.subsystem) {
+        app.session.subsystem = node.subsystem;
+      }
+
+      let cardClass = node.type;
+      if (isDeadEnd(node)) cardClass = "dead-end";
+
+      let html = `<div class="node-card ${cardClass}">`;
+
+      if (node.subsystem) {
+        html += `<div class="subsystem-badge">${node.subsystem}</div>`;
+      }
+
+      html += `<p class="node-text">${escapeHtml(node.text)}</p>`;
+
+      if (node.tags?.length) {
+        html += '<div class="tags">' + node.tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("") + "</div>";
+      }
+
+      if (node.type === "question") {
+        html += '<div class="btn-row">';
+        node.answers.forEach((answer, i) => {
+          html += `<button type="button" class="btn" data-action="answer" data-index="${i}">${escapeHtml(answer.label)}</button>`;
+        });
+        html += "</div>";
+      } else if (node.type === "action") {
+        html += `<button type="button" class="btn btn-primary" data-action="confirm">${escapeHtml(node.confirmation || "Done")}</button>`;
+      } else if (node.type === "solution" && !isDeadEnd(node)) {
+        html += `<div class="btn-pair">
+          <button type="button" class="btn btn-success" data-action="fixed">✓ This fixed it</button>
+          <button type="button" class="btn btn-danger" data-action="unsolved">✗ Didn't fix it</button>
+        </div>`;
+      } else if (isDeadEnd(node)) {
+        if (OhmgStorage.canWrite()) {
+          html += `<button type="button" class="btn btn-primary" data-action="log">Log this problem</button>`;
+        } else {
+          html += `<p class="form-hint">Configure GitHub or shared-folder storage to log this problem.</p>`;
+        }
+      }
+
+      html += "</div>";
+      root.innerHTML = html;
+
+      root.querySelectorAll("[data-action]").forEach(btn => {
+        btn.addEventListener("click", handleSessionAction);
+      });
+
+      document.getElementById("btn-back").disabled = app.session.history.length <= 1;
+    }
+
+    function handleSessionAction(e) {
+      const action = e.currentTarget.dataset.action;
+      const node = getNode(app.session.currentNodeId);
+      if (!node) return;
+
+      if (action === "answer") {
+        const index = Number(e.currentTarget.dataset.index);
+        const next = node.answers[index]?.next;
+        if (next) navigateTo(next, true);
+      } else if (action === "confirm") {
+        if (node.next) navigateTo(node.next, true);
+      } else if (action === "fixed") {
+        endSessionResolved(node);
+      } else if (action === "unsolved") {
+        app.session.solutionsAttempted.push(node.id);
+        if (node.ifUnsolved) {
+          navigateTo(node.ifUnsolved, true);
+        } else {
+          renderSession();
+        }
+      } else if (action === "log") {
+        showLogForm();
+      }
+    }
+
+    function showLogForm() {
+      const root = document.getElementById("session-root");
+      const savedName = localStorage.getItem(STORAGE_KEYS.submitterName) || "";
+
+      setSessionActionsVisible(false);
+      breadcrumbUpdate("Log this problem");
+
+      root.innerHTML = `
+        <div class="node-card log-form-card">
+          <h2>Log this problem</h2>
+          <p class="form-intro">The tree has no recorded fix for this path. Capture what happened so the team can learn from it.</p>
+          <form id="case-log-form">
+            <div class="form-group">
+              <label for="log-name">Your name <span style="color:var(--red)">*</span></label>
+              <input type="text" id="log-name" required value="${escapeHtml(savedName)}" autocomplete="name">
+            </div>
+            <div class="form-group">
+              <label for="log-problem">Problem description <span style="color:var(--red)">*</span></label>
+              <textarea id="log-problem" required placeholder="What was the symptom?"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="log-fix">What fixed it</label>
+              <textarea id="log-fix" placeholder="Leave blank if still unresolved"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="log-tags">Tags</label>
+              <input type="text" id="log-tags" placeholder="e.g. apps, connector, 5v-rail">
+            </div>
+            <div class="form-group">
+              <label class="toggle-row">
+                <input type="checkbox" id="log-propose">
+                <span>Propose a new tree node after logging</span>
+              </label>
+            </div>
+            <div class="form-status" id="log-form-status"></div>
+            <div class="form-actions">
+              <button type="submit" class="primary">Submit case</button>
+              <button type="button" id="btn-cancel-log">Cancel</button>
+            </div>
+          </form>
+        </div>`;
+
+      document.getElementById("case-log-form").addEventListener("submit", submitCaseLog);
+      document.getElementById("btn-cancel-log").addEventListener("click", renderSession);
+    }
+
+    function breadcrumbUpdate(text) {
+      document.getElementById("breadcrumb").textContent = text;
+    }
+
+    async function submitCaseLog(e) {
+      e.preventDefault();
+      const statusEl = document.getElementById("log-form-status");
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+
+      const submittedBy = document.getElementById("log-name").value.trim();
+      const problemDescription = document.getElementById("log-problem").value.trim();
+      const fix = document.getElementById("log-fix").value.trim();
+      const tags = parseTags(document.getElementById("log-tags").value);
+      const wantProposal = document.getElementById("log-propose").checked;
+      const deadEndNodeId = app.session.currentNodeId;
+
+      if (!submittedBy || !problemDescription) {
+        statusEl.textContent = "Name and problem description are required.";
+        statusEl.className = "form-status error";
+        return;
+      }
+
+      localStorage.setItem(STORAGE_KEYS.submitterName, submittedBy);
+
+      const caseEntry = {
+        id: generateCaseId(),
+        timestamp: new Date().toISOString(),
+        submittedBy,
+        subsystem: app.session.subsystem,
+        path: buildCasePath(),
+        solutionsAttempted: [...app.session.solutionsAttempted],
+        resolvedBySolution: null,
+        problemDescription,
+        fix: fix || null,
+        tags,
+        status: "unreviewed"
+      };
+
+      submitBtn.disabled = true;
+      statusEl.textContent = "Saving…";
+      statusEl.className = "form-status";
+
+      try {
+        await saveCase(caseEntry);
+        if (wantProposal) {
+          startProposalWizard(caseEntry, deadEndNodeId, submittedBy);
+        } else {
+          renderCaseSuccess(caseEntry, "Case logged. The electrical lead will review it.");
+        }
+      } catch (err) {
+        submitBtn.disabled = false;
+        statusEl.textContent = err.message;
+        statusEl.className = "form-status error";
+      }
+    }
+
+    async function endSessionResolved(node) {
+      const root = document.getElementById("session-root");
+      setSessionActionsVisible(false);
+
+      const submittedBy = localStorage.getItem(STORAGE_KEYS.submitterName) || "Unknown";
+      const caseEntry = {
+        id: generateCaseId(),
+        timestamp: new Date().toISOString(),
+        submittedBy,
+        subsystem: app.session.subsystem || node.subsystem,
+        path: [...app.session.path, node.id],
+        solutionsAttempted: [...app.session.solutionsAttempted],
+        resolvedBySolution: node.id,
+        problemDescription: `Resolved via tree at ${node.id}`,
+        fix: node.text,
+        tags: node.tags ? [...node.tags] : [],
+        status: "resolved-by-tree"
+      };
+
+      if (OhmgStorage.canWrite()) {
+        root.innerHTML = `<div class="node-card solution"><p class="node-text">Saving case…</p></div>`;
+        try {
+          await saveCase(caseEntry);
+          renderCaseSuccess(caseEntry, "Marked as resolved and logged to cases.");
+        } catch (err) {
+          root.innerHTML = `
+            <div class="node-card solution">
+              <p class="node-text">Fix worked, but saving failed.</p>
+              <p class="form-hint" style="margin-top:0.5rem;">${escapeHtml(err.message)}</p>
+              <button type="button" class="btn btn-primary" id="btn-new-session" style="margin-top:1rem;">Start new session</button>
+            </div>`;
+          document.getElementById("btn-new-session").addEventListener("click", restartSession);
+        }
+      } else {
+        root.innerHTML = `
+          <div class="node-card solution">
+            <p class="node-text">Marked as resolved.</p>
+            <p style="color:var(--muted);font-size:0.9rem;margin-top:0.5rem;">Fix: ${escapeHtml(node.text)}</p>
+            <p class="form-hint" style="margin-top:0.5rem;">Enable GitHub or shared-folder storage to save this case to the log.</p>
+            <button type="button" class="btn btn-primary" id="btn-new-session" style="margin-top:1rem;">Start new session</button>
+          </div>`;
+        document.getElementById("btn-new-session").addEventListener("click", restartSession);
+      }
+    }
+
+    function renderCaseSuccess(caseEntry, message) {
+      const root = document.getElementById("session-root");
+      breadcrumbUpdate("Case saved");
+
+      root.innerHTML = `
+        <div class="node-card solution">
+          <p class="node-text">${escapeHtml(message)}</p>
+          <p class="case-meta" style="margin-top:0.5rem;">${escapeHtml(caseEntry.id)} · ${escapeHtml(caseEntry.status)}</p>
+          <div class="form-actions" style="margin-top:1rem;">
+            <button type="button" class="btn btn-primary" id="btn-view-cases">Browse cases</button>
+            <button type="button" class="btn" id="btn-new-session">Start new session</button>
+          </div>
+        </div>`;
+
+      document.getElementById("btn-new-session").addEventListener("click", restartSession);
+      document.getElementById("btn-view-cases").addEventListener("click", () => {
+        switchPanel("cases");
+        restartSession();
+      });
+    }
+
+    function startProposalWizard(caseEntry, deadEndNodeId, submittedBy) {
+      app.proposal = {
+        step: 1,
+        caseRef: caseEntry.id,
+        submittedBy,
+        attachAfterNode: deadEndNodeId,
+        attachVia: "ifUnsolved",
+        attachMode: "auto",
+        type: null,
+        manualAttachNode: deadEndNodeId,
+        manualAttachVia: "ifUnsolved"
+      };
+      renderProposalWizard();
+    }
+
+    function renderProposalWizard() {
+      const root = document.getElementById("session-root");
+      const p = app.proposal;
+      if (!p) return;
+
+      breadcrumbUpdate("Propose a tree node — step " + p.step + " of 3");
+      setSessionActionsVisible(false);
+
+      const steps = [1, 2, 3]
+        .map((n) => `<span class="${n === p.step ? "active" : ""}">Step ${n}</span>`)
+        .join(" → ");
+
+      let body = `<div class="wizard-steps">${steps}</div>`;
+
+      if (p.step === 1) {
+        body += `
+          <div class="node-card log-form-card">
+            <h2>What type of node?</h2>
+            <div class="btn-row">
+              <button type="button" class="btn" data-proposal-type="question">A question that narrows things down</button>
+              <button type="button" class="btn" data-proposal-type="solution">A direct fix / solution</button>
+              <button type="button" class="btn" data-proposal-type="action">A physical step to perform first</button>
+            </div>
+            <div class="form-actions" style="margin-top:1rem;">
+              <button type="button" class="btn" id="btn-skip-proposal">Skip proposal</button>
+            </div>
+          </div>`;
+      } else if (p.step === 2) {
+        body += renderProposalStep2(p);
+      } else if (p.step === 3) {
+        body += renderProposalStep3(p);
+      }
+
+      root.innerHTML = body;
+
+      root.querySelectorAll("[data-proposal-type]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          app.proposal.type = btn.dataset.proposalType;
+          app.proposal.step = 2;
+          renderProposalWizard();
+        });
+      });
+
+      document.getElementById("btn-skip-proposal")?.addEventListener("click", () => {
+        const caseEntry = app.cases.find((c) => c.id === p.caseRef);
+        renderCaseSuccess(caseEntry, "Case logged. Proposal skipped.");
+        app.proposal = null;
+      });
+
+      document.getElementById("proposal-step2-form")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (!collectProposalStep2()) return;
+        app.proposal.step = 3;
+        renderProposalWizard();
+      });
+
+      document.getElementById("btn-proposal-back")?.addEventListener("click", () => {
+        app.proposal.step -= 1;
+        renderProposalWizard();
+      });
+
+      document.getElementById("btn-add-answer")?.addEventListener("click", () => {
+        const container = document.getElementById("answer-fields");
+        const count = container.querySelectorAll(".answer-field-row").length + 1;
+        container.insertAdjacentHTML(
+          "beforeend",
+          `<div class="answer-field-row">
+            <input type="text" class="proposal-answer" placeholder="Answer ${count} label" required>
+          </div>`
+        );
+      });
+
+      document.getElementById("proposal-step3-form")?.addEventListener("submit", submitProposal);
+    }
+
+    function renderProposalStep2(p) {
+      if (p.type === "question") {
+        return `
+          <div class="node-card log-form-card">
+            <h2>Question content</h2>
+            <form id="proposal-step2-form">
+              <div class="form-group">
+                <label for="proposal-question-text">Question text <span style="color:var(--red)">*</span></label>
+                <textarea id="proposal-question-text" required>${escapeHtml(p.questionText || "")}</textarea>
+              </div>
+              <div class="form-group">
+                <label>Answers (at least 2)</label>
+                <div id="answer-fields">
+                  <div class="answer-field-row"><input type="text" class="proposal-answer" placeholder="Answer 1 label" required value="${escapeHtml(p.answers?.[0] || "")}"></div>
+                  <div class="answer-field-row"><input type="text" class="proposal-answer" placeholder="Answer 2 label" required value="${escapeHtml(p.answers?.[1] || "")}"></div>
+                </div>
+                <button type="button" id="btn-add-answer" style="margin-top:0.5rem;font:inherit;font-size:0.85rem;">+ Add answer</button>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="primary">Next</button>
+                <button type="button" id="btn-proposal-back">Back</button>
+              </div>
+            </form>
+          </div>`;
+      }
+
+      if (p.type === "solution") {
+        return `
+          <div class="node-card log-form-card">
+            <h2>Solution content</h2>
+            <form id="proposal-step2-form">
+              <div class="form-group">
+                <label for="proposal-solution-text">Fix description <span style="color:var(--red)">*</span></label>
+                <textarea id="proposal-solution-text" required>${escapeHtml(p.solutionText || "")}</textarea>
+              </div>
+              <div class="form-group">
+                <label for="proposal-solution-tags">Tags</label>
+                <input type="text" id="proposal-solution-tags" value="${escapeHtml((p.tags || []).join(", "))}" placeholder="comma-separated">
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="primary">Next</button>
+                <button type="button" id="btn-proposal-back">Back</button>
+              </div>
+            </form>
+          </div>`;
+      }
+
+      return `
+        <div class="node-card log-form-card">
+          <h2>Action content</h2>
+          <form id="proposal-step2-form">
+            <div class="form-group">
+              <label for="proposal-action-text">Instruction text <span style="color:var(--red)">*</span></label>
+              <textarea id="proposal-action-text" required>${escapeHtml(p.actionText || "")}</textarea>
+            </div>
+            <div class="form-group">
+              <label for="proposal-action-confirm">Confirmation button label</label>
+              <input type="text" id="proposal-action-confirm" value="${escapeHtml(p.confirmation || "Done")}">
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="primary">Next</button>
+              <button type="button" id="btn-proposal-back">Back</button>
+            </div>
+          </form>
+        </div>`;
+    }
+
+    function renderProposalStep3(p) {
+      const subsystem = getNode(p.attachAfterNode)?.subsystem || app.session.subsystem;
+      const nodeOptions = subsystem
+        ? OhmgTreeOps.getNodesInSubsystem(app.tree, subsystem)
+            .map((id) => `<option value="${escapeHtml(id)}" ${id === p.manualAttachNode ? "selected" : ""}>${escapeHtml(id)}</option>`)
+            .join("")
+        : "";
+
+      const pathPreview = (OhmgTreeOps.findPathToNode(app.tree.nodes, p.attachAfterNode) || []).concat("[NEW NODE]").join(" → ");
+
+      return `
+        <div class="node-card log-form-card">
+          <h2>Where should this attach?</h2>
+          <form id="proposal-step3-form">
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="attach-mode" value="auto" ${p.attachMode !== "manual" ? "checked" : ""}>
+                <span><strong>Auto</strong> — attach via <code>ifUnsolved</code> on dead end <code>${escapeHtml(p.attachAfterNode)}</code></span>
+              </label>
+              <label>
+                <input type="radio" name="attach-mode" value="manual" ${p.attachMode === "manual" ? "checked" : ""}>
+                <span><strong>Manual</strong> — choose parent node and pointer</span>
+              </label>
+            </div>
+            <div id="manual-attach-fields" style="display:${p.attachMode === "manual" ? "block" : "none"};margin-top:1rem;">
+              <div class="form-group">
+                <label for="manual-attach-node">Parent node</label>
+                <select id="manual-attach-node">${nodeOptions}</select>
+              </div>
+              <div class="form-group">
+                <label for="manual-attach-via">Attach via</label>
+                <select id="manual-attach-via">
+                  <option value="ifUnsolved">ifUnsolved</option>
+                  <option value="answer_0">Answer 1 (index 0)</option>
+                  <option value="answer_1">Answer 2 (index 1)</option>
+                  <option value="answer_2">Answer 3 (index 2)</option>
+                </select>
+              </div>
+            </div>
+            <p class="path-preview"><strong>Path preview:</strong> ${escapeHtml(pathPreview)}</p>
+            <div class="form-status" id="proposal-status"></div>
+            <div class="form-actions">
+              <button type="submit" class="primary">Submit proposal</button>
+              <button type="button" id="btn-proposal-back">Back</button>
+            </div>
+          </form>
+        </div>`;
+    }
+
+    function collectProposalStep2() {
+      const p = app.proposal;
+      if (p.type === "question") {
+        p.questionText = document.getElementById("proposal-question-text").value.trim();
+        p.answers = [...document.querySelectorAll(".proposal-answer")]
+          .map((el) => el.value.trim())
+          .filter(Boolean);
+        if (!p.questionText || p.answers.length < 2) {
+          alert("Question text and at least two answers are required.");
+          return false;
+        }
+      } else if (p.type === "solution") {
+        p.solutionText = document.getElementById("proposal-solution-text").value.trim();
+        p.tags = parseTags(document.getElementById("proposal-solution-tags").value);
+        if (!p.solutionText) {
+          alert("Fix description is required.");
+          return false;
+        }
+      } else {
+        p.actionText = document.getElementById("proposal-action-text").value.trim();
+        p.confirmation = document.getElementById("proposal-action-confirm").value.trim() || "Done";
+        if (!p.actionText) {
+          alert("Instruction text is required.");
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function buildProposedNodeFromWizard(p) {
+      if (p.type === "question") {
+        return {
+          type: "question",
+          text: p.questionText,
+          answers: p.answers.map((label) => ({ label }))
+        };
+      }
+      if (p.type === "solution") {
+        return {
+          type: "solution",
+          text: p.solutionText,
+          tags: p.tags || [],
+          ifUnsolved: null
+        };
+      }
+      return {
+        type: "action",
+        text: p.actionText,
+        confirmation: p.confirmation || "Done"
+      };
+    }
+
+    async function submitProposal(e) {
+      e.preventDefault();
+      const p = app.proposal;
+      const statusEl = document.getElementById("proposal-status");
+      const attachMode = document.querySelector('input[name="attach-mode"]:checked')?.value || "auto";
+
+      p.attachMode = attachMode;
+      if (attachMode === "manual") {
+        p.attachAfterNode = document.getElementById("manual-attach-node").value;
+        p.attachVia = document.getElementById("manual-attach-via").value;
+      } else {
+        p.attachVia = "ifUnsolved";
+      }
+
+      const proposedNode = buildProposedNodeFromWizard(p);
+      const entry = {
+        id: OhmgTreeOps.generatePendingId(app.pending),
+        submittedBy: p.submittedBy,
+        timestamp: new Date().toISOString(),
+        status: "pending",
+        caseRef: p.caseRef,
+        attachAfterNode: p.attachAfterNode,
+        attachVia: p.attachVia,
+        proposedNode
+      };
+
+      statusEl.textContent = "Submitting…";
+      try {
+        await appendToFile("pending.json", entry, `Propose node ${entry.id}`);
+        app.pending.push(entry);
+        const caseRef = p.caseRef;
+        app.proposal = null;
+        const caseEntry = app.cases.find((c) => c.id === caseRef);
+        renderCaseSuccess(caseEntry, "Case logged and node proposal submitted for lead review.");
+        renderReviewQueue();
+      } catch (err) {
+        statusEl.textContent = err.message;
+        statusEl.className = "form-status error";
+      }
+    }
+
+    document.addEventListener("change", (e) => {
+      if (e.target.name === "attach-mode" && app.proposal?.step === 3) {
+        const manual = document.getElementById("manual-attach-fields");
+        if (manual) manual.style.display = e.target.value === "manual" ? "block" : "none";
+      }
+    });
+
+    async function persistAllData(files) {
+      for (const { name, data, message } of files) {
+        await persistFile(name, data, message);
+      }
+    }
+
+    function renderReviewQueue() {
+      const root = document.getElementById("review-root");
+      if (!root) return;
+
+      const queue = app.pending
+        .filter((p) => p.status === "pending")
+        .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      if (!OhmgStorage.canWrite()) {
+        root.innerHTML = `<div class="placeholder-panel">Configure writable storage to approve or reject proposals.</div>`;
+        return;
+      }
+
+      if (!queue.length) {
+        root.innerHTML = `<div class="empty-state">No pending proposals. Members can propose nodes after logging a dead end.</div>`;
+        return;
+      }
+
+      root.innerHTML = queue
+        .map((p) => {
+          const path = OhmgTreeOps.findPathToNode(app.tree.nodes, p.attachAfterNode) || [];
+          const pathPreview = path.concat("[NEW NODE]").join(" → ");
+          const caseEntry = app.cases.find((c) => c.id === p.caseRef);
+          const preview = OhmgTreeOps.renderProposedNodePreview(p.proposedNode);
+
+          return `
+            <div class="review-card" data-pending-id="${escapeHtml(p.id)}">
+              <h3>${escapeHtml(p.id)} · ${escapeHtml(p.submittedBy)}</h3>
+              <p class="case-meta">${formatDate(p.timestamp)}${caseEntry ? ` · case <button type="button" class="link-case" data-case-id="${escapeHtml(p.caseRef)}" style="font:inherit;color:var(--accent);background:none;border:none;cursor:pointer;padding:0;">${escapeHtml(p.caseRef)}</button>` : ""}</p>
+              <p>${escapeHtml(preview)}</p>
+              <p class="path-preview"><strong>Attach:</strong> ${escapeHtml(p.attachAfterNode)} via ${escapeHtml(p.attachVia)}<br><strong>Path:</strong> ${escapeHtml(pathPreview)}</p>
+              <div class="review-actions">
+                <button type="button" class="approve" data-action="approve">Approve</button>
+                <button type="button" data-action="edit">Approve with edits</button>
+                <button type="button" class="reject" data-action="reject">Reject</button>
+              </div>
+              <div class="edit-form" id="edit-${escapeHtml(p.id)}" hidden></div>
+            </div>`;
+        })
+        .join("");
+
+      root.querySelectorAll(".review-actions button").forEach((btn) => {
+        btn.addEventListener("click", () => handleReviewAction(btn.closest(".review-card").dataset.pendingId, btn.dataset.action));
+      });
+
+      root.querySelectorAll(".link-case").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          switchPanel("cases");
+          const item = document.querySelector(`.case-item[data-id="${btn.dataset.caseId}"]`);
+          item?.classList.add("open");
+          item?.scrollIntoView({ behavior: "smooth", block: "center" });
+        });
+      });
+    }
+
+    function renderEditForm(pending) {
+      const n = pending.proposedNode;
+      if (n.type === "question") {
+        const answers = (n.answers || []).map((a, i) =>
+          `<div class="answer-field-row"><input type="text" class="edit-answer" value="${escapeHtml(a.label)}" placeholder="Answer ${i + 1}"></div>`
+        ).join("");
+        return `
+          <div class="form-group"><label>Question</label><textarea id="edit-text">${escapeHtml(n.text)}</textarea></div>
+          <div class="form-group"><label>Answers</label>${answers}</div>`;
+      }
+      if (n.type === "solution") {
+        return `
+          <div class="form-group"><label>Fix</label><textarea id="edit-text">${escapeHtml(n.text)}</textarea></div>
+          <div class="form-group"><label>Tags</label><input type="text" id="edit-tags" value="${escapeHtml((n.tags || []).join(", "))}"></div>`;
+      }
+      return `
+        <div class="form-group"><label>Instruction</label><textarea id="edit-text">${escapeHtml(n.text)}</textarea></div>
+        <div class="form-group"><label>Confirmation label</label><input type="text" id="edit-confirm" value="${escapeHtml(n.confirmation || "Done")}"></div>`;
+    }
+
+    function readEditedNode(pending) {
+      const n = pending.proposedNode;
+      const text = document.getElementById("edit-text").value.trim();
+      if (n.type === "question") {
+        const answers = [...document.querySelectorAll(".edit-answer")].map((el) => el.value.trim()).filter(Boolean);
+        if (answers.length < 2) throw new Error("At least two answers required.");
+        return { type: "question", text, answers: answers.map((label) => ({ label })) };
+      }
+      if (n.type === "solution") {
+        return { type: "solution", text, tags: parseTags(document.getElementById("edit-tags").value), ifUnsolved: n.ifUnsolved ?? null };
+      }
+      return { type: "action", text, confirmation: document.getElementById("edit-confirm").value.trim() || "Done" };
+    }
+
+    async function handleReviewAction(pendingId, action) {
+      const pending = app.pending.find((p) => p.id === pendingId);
+      if (!pending) return;
+
+      if (action === "edit") {
+        const editEl = document.getElementById("edit-" + pendingId);
+        if (editEl.hidden) {
+          editEl.hidden = false;
+          editEl.innerHTML = renderEditForm(pending) + `
+            <div class="form-actions">
+              <button type="button" class="primary" data-confirm-edit>Confirm approve</button>
+              <button type="button" data-cancel-edit>Cancel</button>
+            </div>`;
+          editEl.querySelector("[data-confirm-edit]").addEventListener("click", () => approveProposal(pendingId, true));
+          editEl.querySelector("[data-cancel-edit]").addEventListener("click", () => { editEl.hidden = true; editEl.innerHTML = ""; });
+        }
+        return;
+      }
+
+      if (action === "reject") {
+        const note = prompt("Rejection note (optional):") ?? "";
+        await rejectProposal(pendingId, note);
+        return;
+      }
+
+      if (action === "approve") {
+        await approveProposal(pendingId, false);
+      }
+    }
+
+    async function approveProposal(pendingId, withEdits) {
+      const pending = app.pending.find((p) => p.id === pendingId);
+      if (!pending) return;
+
+      let proposedOverride = null;
+      if (withEdits) {
+        try {
+          proposedOverride = readEditedNode(pending);
+        } catch (err) {
+          alert(err.message);
+          return;
+        }
+      }
+
+      const tree = JSON.parse(JSON.stringify(app.tree));
+      let result;
+      try {
+        result = OhmgTreeOps.applyApproval(tree, pending, proposedOverride);
+      } catch (err) {
+        alert(err.message);
+        return;
+      }
+
+      pending.status = "promoted";
+      pending.promotedNodeId = result.newNodeId;
+      pending.reviewedAt = new Date().toISOString();
+
+      if (pending.caseRef) {
+        const caseEntry = app.cases.find((c) => c.id === pending.caseRef);
+        if (caseEntry) caseEntry.status = "promoted";
+      }
+
+      app.tree = tree;
+      app.changelog.push(result.changelogEntry);
+
+      try {
+        await persistAllData([
+          { name: "tree.json", data: tree, message: `Promote ${pending.id} → ${result.newNodeId}` },
+          { name: "pending.json", data: app.pending, message: `Mark ${pending.id} promoted` },
+          { name: "changelog.json", data: app.changelog, message: `Log promotion of ${result.newNodeId}` },
+          { name: "cases.json", data: app.cases, message: `Update case status for ${pending.caseRef || "n/a"}` }
+        ]);
+        renderReviewQueue();
+        renderCases();
+        renderMaintenance();
+        alert(`Approved. New node: ${result.newNodeId}`);
+      } catch (err) {
+        alert("Save failed: " + err.message);
+      }
+    }
+
+    async function rejectProposal(pendingId, note) {
+      const pending = app.pending.find((p) => p.id === pendingId);
+      if (!pending) return;
+
+      pending.status = "rejected";
+      pending.rejectionNote = note || null;
+      pending.reviewedAt = new Date().toISOString();
+
+      try {
+        await persistFile("pending.json", app.pending, `Reject ${pendingId}`);
+        renderReviewQueue();
+      } catch (err) {
+        alert("Save failed: " + err.message);
+      }
+    }
+
+    function navigateTo(nodeId, pushHistory) {
+      if (pushHistory) {
+        app.session.path.push(app.session.currentNodeId);
+      }
+      app.session.currentNodeId = nodeId;
+      if (pushHistory) {
+        app.session.history.push(nodeId);
+      }
+      renderSession();
+    }
+
+    function restartSession() {
+      app.session = {
+        currentNodeId: "root",
+        path: [],
+        solutionsAttempted: [],
+        subsystem: null,
+        history: ["root"]
+      };
+      renderSession();
+    }
+
+    function goBack() {
+      if (app.session.history.length <= 1) return;
+      app.session.history.pop();
+      app.session.path.pop();
+      app.session.currentNodeId = app.session.history[app.session.history.length - 1];
+      renderSession();
+    }
+
+    function renderCases() {
+      const list = document.getElementById("case-list");
+      const search = document.getElementById("case-search").value.toLowerCase();
+      const subsystem = document.getElementById("case-subsystem").value;
+      const status = document.getElementById("case-status").value;
+
+      const filtered = app.cases.filter(c => {
+        if (subsystem && c.subsystem !== subsystem) return false;
+        if (status && c.status !== status) return false;
+        if (search) {
+          const haystack = [c.problemDescription, c.fix, ...(c.tags || [])].join(" ").toLowerCase();
+          if (!haystack.includes(search)) return false;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = '<div class="empty-state">No cases yet. Finish a diagnostic session and log a dead end, or mark a solution as fixed.</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(c => `
+        <div class="case-item" data-id="${escapeHtml(c.id)}">
+          <div class="case-header">
+            <div>
+              <strong>${escapeHtml(c.problemDescription || c.id)}</strong>
+              <div class="case-meta">${escapeHtml(c.submittedBy || "Unknown")} · ${formatDate(c.timestamp)}</div>
+            </div>
+            <span class="status-pill">${escapeHtml(c.status)}</span>
+          </div>
+          <div class="case-body">
+            ${c.fix ? `<p><strong>Fix:</strong> ${escapeHtml(c.fix)}</p>` : "<p><em>Unresolved</em></p>"}
+            <p><strong>Path:</strong> ${(c.path || []).join(" → ")}</p>
+            ${c.resolvedBySolution ? `<p><strong>Resolved by:</strong> ${escapeHtml(c.resolvedBySolution)}</p>` : ""}
+            ${c.solutionsAttempted?.length ? `<p><strong>Solutions tried:</strong> ${c.solutionsAttempted.join(", ")}</p>` : ""}
+            ${c.tags?.length ? `<p><strong>Tags:</strong> ${c.tags.join(", ")}</p>` : ""}
+            ${
+              isLeadMode() && c.status === "unreviewed" && OhmgStorage.canWrite()
+                ? `<div class="case-lead-actions">
+                    <button type="button" data-case-one-off="${escapeHtml(c.id)}">Mark one-off</button>
+                  </div>`
+                : ""
+            }
+          </div>
+        </div>`).join("");
+
+      list.querySelectorAll(".case-header").forEach(header => {
+        header.addEventListener("click", () => header.parentElement.classList.toggle("open"));
+      });
+
+      list.querySelectorAll("[data-case-one-off]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          updateCaseStatus(btn.dataset.caseOneOff, "one-off");
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function formatDate(iso) {
+      if (!iso) return "";
+      try {
+        return new Date(iso).toLocaleString();
+      } catch {
+        return iso;
+      }
+    }
+
+    function switchPanel(name) {
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll("nav button[data-panel]").forEach(b => b.classList.remove("active"));
+      document.getElementById("panel-" + name).classList.add("active");
+      document.querySelector(`nav button[data-panel="${name}"]`)?.classList.add("active");
+      if (name === "review") renderReviewQueue();
+      if (name === "tree") renderTreeEditor();
+      if (name === "maintenance") renderMaintenance();
+    }
+
+    function toggleLeadMode() {
+      const isLead = localStorage.getItem(STORAGE_KEYS.isLead) === "true";
+      if (isLead) {
+        localStorage.removeItem(STORAGE_KEYS.isLead);
+        document.body.classList.remove("lead-mode");
+        document.getElementById("mode-toggle").textContent = "Member mode";
+        switchPanel("diagnose");
+        return;
+      }
+
+      const storedPin = localStorage.getItem(STORAGE_KEYS.leadPin) || DEFAULT_LEAD_PIN;
+      const entered = prompt("Enter lead PIN:");
+      if (entered === storedPin) {
+        localStorage.setItem(STORAGE_KEYS.isLead, "true");
+        document.body.classList.add("lead-mode");
+        document.getElementById("mode-toggle").textContent = "Lead mode";
+        renderReviewQueue();
+        renderTreeEditor();
+        renderMaintenance();
+        renderCases();
+      } else if (entered !== null) {
+        alert("Incorrect PIN.");
+      }
+    }
+
+    function setSettingsStatus(message, type) {
+      const el = document.getElementById("settings-status");
+      el.textContent = message || "";
+      el.className = "form-status" + (type ? " " + type : "");
+    }
+
+    function syncSettingsForm() {
+      const config = OhmgStorage.getConfig();
+      document.querySelectorAll('input[name="storage-mode"]').forEach(radio => {
+        radio.checked = radio.value === config.mode;
+      });
+      document.getElementById("github-owner").value = config.githubOwner;
+      document.getElementById("github-repo").value = config.githubRepo;
+      document.getElementById("github-branch").value = config.githubBranch || "main";
+      document.getElementById("github-token").value = config.githubToken;
+      document.getElementById("lead-pin").value = "";
+      updateSettingsSections(config.mode);
+    }
+
+    function updateSettingsSections(mode) {
+      document.getElementById("github-settings").style.display = mode === "github" ? "block" : "none";
+      document.getElementById("filesystem-settings").style.display = mode === "filesystem" ? "block" : "none";
+    }
+
+    function openSettings() {
+      syncSettingsForm();
+      setSettingsStatus("");
+      const modal = document.getElementById("settings-modal");
+      modal.hidden = false;
+      modal.classList.add("open");
+    }
+
+    function closeSettings() {
+      const modal = document.getElementById("settings-modal");
+      modal.classList.remove("open");
+      modal.hidden = true;
+      setSettingsStatus("");
+    }
+
+    function readSettingsForm() {
+      const mode = document.querySelector('input[name="storage-mode"]:checked')?.value || "fetch";
+      const updates = {
+        mode,
+        githubOwner: document.getElementById("github-owner").value.trim(),
+        githubRepo: document.getElementById("github-repo").value.trim(),
+        githubBranch: document.getElementById("github-branch").value.trim() || "main"
+      };
+
+      const token = document.getElementById("github-token").value.trim();
+      if (token) updates.githubToken = token;
+
+      return updates;
+    }
+
+    async function saveSettings() {
+      const updates = readSettingsForm();
+      OhmgStorage.saveConfig(updates);
+
+      const newPin = document.getElementById("lead-pin").value.trim();
+      if (newPin) {
+        localStorage.setItem(STORAGE_KEYS.leadPin, newPin);
+      }
+
+      try {
+        if (updates.mode === "filesystem") {
+          const handle = await OhmgStorage.getDirHandle();
+          if (!handle) {
+            setSettingsStatus("Select a shared folder before saving.", "error");
+            return;
+          }
+        }
+
+        await reloadAppData();
+        updateStorageBadge();
+        setSettingsStatus("Settings saved.", "success");
+        setTimeout(closeSettings, 600);
+      } catch (err) {
+        setSettingsStatus(err.message, "error");
+      }
+    }
+
+    async function testGitHubSettings() {
+      OhmgStorage.saveConfig(readSettingsForm());
+      setSettingsStatus("Testing connection…");
+      try {
+        await OhmgStorage.testGitHubConnection();
+        setSettingsStatus("Connection successful — tree.json readable.", "success");
+      } catch (err) {
+        setSettingsStatus(err.message, "error");
+      }
+    }
+
+    async function pickSharedFolder() {
+      setSettingsStatus("Waiting for folder selection…");
+      try {
+        await OhmgStorage.pickDataDirectory();
+        OhmgStorage.saveConfig({ mode: "filesystem" });
+        document.querySelector('input[name="storage-mode"][value="filesystem"]').checked = true;
+        updateSettingsSections("filesystem");
+        await reloadAppData();
+        updateStorageBadge();
+        setSettingsStatus("Folder access granted.", "success");
+      } catch (err) {
+        if (err.name !== "AbortError") {
+          setSettingsStatus(err.message, "error");
+        } else {
+          setSettingsStatus("");
+        }
+      }
+    }
+
+    // Exposed for Phase 4+ write flows
+    window.OhmgApp = { app, persistFile, appendToFile, reloadAppData, saveCase, generateCaseId };
+
+    document.querySelectorAll("nav button[data-panel]").forEach(btn => {
+      btn.addEventListener("click", () => switchPanel(btn.dataset.panel));
+    });
+    document.getElementById("mode-toggle").addEventListener("click", toggleLeadMode);
+    document.getElementById("settings-btn").addEventListener("click", openSettings);
+    document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
+    document.getElementById("btn-save-settings").addEventListener("click", saveSettings);
+    document.getElementById("btn-reload-data").addEventListener("click", async () => {
+      setSettingsStatus("Reloading…");
+      try {
+        await reloadAppData();
+        setSettingsStatus("Data reloaded.", "success");
+      } catch (err) {
+        setSettingsStatus(err.message, "error");
+      }
+    });
+    document.getElementById("btn-test-github").addEventListener("click", testGitHubSettings);
+    document.getElementById("btn-pick-folder").addEventListener("click", pickSharedFolder);
+    document.getElementById("btn-connect-folder").addEventListener("click", pickSharedFolder);
+    document.querySelectorAll('input[name="storage-mode"]').forEach(radio => {
+      radio.addEventListener("change", () => updateSettingsSections(radio.value));
+    });
+    document.getElementById("settings-modal").addEventListener("click", (e) => {
+      if (e.target.id === "settings-modal") closeSettings();
+    });
+    document.getElementById("btn-restart").addEventListener("click", restartSession);
+    document.getElementById("btn-back").addEventListener("click", goBack);
+    document.getElementById("case-search").addEventListener("input", renderCases);
+    document.getElementById("case-subsystem").addEventListener("change", renderCases);
+    document.getElementById("case-status").addEventListener("change", renderCases);
+    document.getElementById("tree-search")?.addEventListener("input", renderTreeEditor);
+    document.getElementById("tree-subsystem")?.addEventListener("change", renderTreeEditor);
+    document.getElementById("tree-show-retired")?.addEventListener("change", renderTreeEditor);
+    document.getElementById("tree-edit-modal")?.addEventListener("click", (e) => {
+      if (e.target.id === "tree-edit-modal") closeTreeEditModal();
+    });
+
+    init();
+  </script>
+</body>
+</html>

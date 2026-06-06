@@ -1,0 +1,11 @@
+{
+  "name": "ohmmygod",
+  "version": "0.1.0",
+  "description": "FSAE Electrical Subsystem Diagnostic & Failure Tracking Tool",
+  "private": true,
+  "scripts": {
+    "validate": "node scripts/validate-tree.js",
+    "serve": "python3 -m http.server 8080",
+    "setup": "bash scripts/install-hooks.sh"
+  }
+}
