@@ -1,181 +1,1047 @@
 {
-  "version": "1.0",
-  "lastModified": "2025-06-06T00:00:00Z",
+  "version": "2.0",
+  "lastModified": "2026-06-20T19:12:14Z",
   "nodes": {
     "root": {
       "id": "root",
       "type": "question",
       "subsystem": null,
-      "text": "Which subsystem is having the issue?",
+      "text": "What's the situation?",
       "answers": [
-        { "label": "Power / PDM", "next": "power_001" },
-        { "label": "Sensors", "next": "sensor_001" },
-        { "label": "CAN bus", "next": "can_001" },
-        { "label": "Shutdown circuit", "next": "shutdown_001" },
-        { "label": "Ethernet / DAQ", "next": "eth_001" }
+        {
+          "label": "Existing sensor/actuator isn't working properly",
+          "next": "sensor_001"
+        },
+        {
+          "label": "Car won't turn on",
+          "next": "power_001"
+        },
+        {
+          "label": "Battery issues at drive",
+          "next": "power_010"
+        },
+        {
+          "label": "Drive feature won't work (shifting / launch / dash)",
+          "next": "drive_001"
+        }
       ]
     },
-    "power_001": {
-      "id": "power_001",
-      "type": "question",
-      "subsystem": "power",
-      "text": "Is the main 40A fuse blown?",
-      "answers": [
-        { "label": "Yes", "next": "power_002" },
-        { "label": "No", "next": "power_003" }
-      ]
-    },
-    "power_002": {
-      "id": "power_002",
-      "type": "action",
-      "subsystem": "power",
-      "text": "Before replacing the fuse, probe continuity between chassis ground and the positive PDM input rail to check for a short.",
-      "confirmation": "Done — no short found",
-      "next": "power_sol_001"
-    },
-    "power_003": {
-      "id": "power_003",
-      "type": "question",
-      "subsystem": "power",
-      "text": "Is the PDM fault light on?",
-      "answers": [
-        { "label": "Yes", "next": "power_deadend_001" },
-        { "label": "No", "next": "power_deadend_001" }
-      ]
-    },
-    "power_sol_001": {
-      "id": "power_sol_001",
+    "ana_deadend_001": {
+      "id": "ana_deadend_001",
       "type": "solution",
-      "subsystem": "power",
-      "text": "Replace the 40A main fuse with a spare from the spares bag. Re-test ignition-on.",
-      "tags": ["fuse", "pdm"],
-      "ifUnsolved": "power_deadend_001"
-    },
-    "power_deadend_001": {
-      "id": "power_deadend_001",
-      "type": "solution",
-      "subsystem": "power",
-      "text": "No recorded fix for this power failure path.",
+      "subsystem": "sensor",
+      "text": "No recorded fix for this path. Log this problem for the electrical lead.",
       "tags": [],
       "ifUnsolved": null
+    },
+    "ana_sol_supply_power": {
+      "id": "ana_sol_supply_power",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Supply the correct power to the sensor.",
+      "tags": [
+        "power",
+        "sensor"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_supply_voltage": {
+      "id": "ana_sol_supply_voltage",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Supply the correct voltage level (check sensor datasheet \u2014 5 V from ECU or 13 V from PDM).",
+      "tags": [
+        "power",
+        "voltage"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_configure_av": {
+      "id": "ana_sol_configure_av",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Configure the correct AV input in MoTeC and ensure pullup control is on.",
+      "tags": [
+        "motec",
+        "av-input",
+        "pullup"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_switch_pin": {
+      "id": "ana_sol_switch_pin",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Either switch M1 Tune to use that pin, or move the wire to the correct pin.",
+      "tags": [
+        "motec",
+        "pinout"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_shear_rewire": {
+      "id": "ana_sol_shear_rewire",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Likely a shear in the signal wire \u2014 rewire the signal wire.",
+      "tags": [
+        "signal",
+        "wiring",
+        "shear"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_secure_ground": {
+      "id": "ana_sol_secure_ground",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Secure the ground bolts.",
+      "tags": [
+        "ground"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_rewire_ground": {
+      "id": "ana_sol_rewire_ground",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Rewire the ground wire \u2014 shear found along the ground path.",
+      "tags": [
+        "ground",
+        "wiring",
+        "shear"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_repin": {
+      "id": "ana_sol_repin",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Re-pin or re-crimp the ring terminal \u2014 termination is bad.",
+      "tags": [
+        "connector",
+        "termination"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_spacer": {
+      "id": "ana_sol_spacer",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Add a spacer \u2014 DTM connector contact is improper.",
+      "tags": [
+        "dtm",
+        "connector"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_double_check": {
+      "id": "ana_sol_double_check",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Sensor works on the bench \u2014 you likely mis-checked power, ground, signal, or pinout. Double-check all four.",
+      "tags": [
+        "bench-test"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_sol_use_other": {
+      "id": "ana_sol_use_other",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Use the working replacement sensor on the car setup.",
+      "tags": [
+        "sensor",
+        "spares"
+      ],
+      "ifUnsolved": "ana_deadend_001"
+    },
+    "ana_deadend_002": {
+      "id": "ana_deadend_002",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "No recorded fix after bench test and sensor swap.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "ana_001": {
+      "id": "ana_001",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is the sensor getting power? (Check with multimeter)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "ana_002"
+        },
+        {
+          "label": "No",
+          "next": "ana_sol_supply_power"
+        }
+      ]
+    },
+    "ana_002": {
+      "id": "ana_002",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is it the right voltage level? (Check sensor datasheet \u2014 5 V from ECU or 13 V from PDM)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "ana_003"
+        },
+        {
+          "label": "No",
+          "next": "ana_sol_supply_voltage"
+        }
+      ]
+    },
+    "ana_003": {
+      "id": "ana_003",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is the sensor grounded? (Check continuity to chassis ground)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "ana_004"
+        },
+        {
+          "label": "No",
+          "next": "ana_005"
+        }
+      ]
+    },
+    "ana_004": {
+      "id": "ana_004",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is there continuity from the MoTeC connector to the sensor signal wire?",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "ana_006"
+        },
+        {
+          "label": "No",
+          "next": "ana_007"
+        }
+      ]
+    },
+    "ana_006": {
+      "id": "ana_006",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is it configured to the correct AV input in MoTeC? (Check MoTeC pinout)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "ana_act_bench"
+        },
+        {
+          "label": "No",
+          "next": "ana_sol_configure_av"
+        }
+      ]
+    },
+    "ana_007": {
+      "id": "ana_007",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is there continuity to any other MoTeC pins?",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "ana_sol_switch_pin"
+        },
+        {
+          "label": "No",
+          "next": "ana_sol_shear_rewire"
+        }
+      ]
+    },
+    "ana_005": {
+      "id": "ana_005",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Are the ground bolts secure?",
+      "answers": [
+        {
+          "label": "Secure",
+          "next": "ana_008"
+        },
+        {
+          "label": "Not secure",
+          "next": "ana_sol_secure_ground"
+        }
+      ]
+    },
+    "ana_008": {
+      "id": "ana_008",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Check for any shears along the ground wire.",
+      "answers": [
+        {
+          "label": "Sheared",
+          "next": "ana_sol_rewire_ground"
+        },
+        {
+          "label": "Not sheared",
+          "next": "ana_009"
+        }
+      ]
+    },
+    "ana_009": {
+      "id": "ana_009",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Are both sides of the wires properly terminated with pins or ring terminals?",
+      "answers": [
+        {
+          "label": "Properly terminated",
+          "next": "ana_010"
+        },
+        {
+          "label": "Bad termination",
+          "next": "ana_sol_repin"
+        }
+      ]
+    },
+    "ana_010": {
+      "id": "ana_010",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is there proper contact between both sides of the DTM connector?",
+      "answers": [
+        {
+          "label": "Proper",
+          "next": "ana_deadend_001"
+        },
+        {
+          "label": "Improper",
+          "next": "ana_sol_spacer"
+        }
+      ]
+    },
+    "ana_act_bench": {
+      "id": "ana_act_bench",
+      "type": "action",
+      "subsystem": "sensor",
+      "text": "Try the sensor with the bench power supply and a multimeter.",
+      "confirmation": "Done \u2014 tested on bench",
+      "next": "ana_011"
+    },
+    "ana_011": {
+      "id": "ana_011",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Does the sensor work on the bench?",
+      "answers": [
+        {
+          "label": "Works",
+          "next": "ana_sol_double_check"
+        },
+        {
+          "label": "Doesn't work",
+          "next": "ana_012"
+        }
+      ]
+    },
+    "ana_012": {
+      "id": "ana_012",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Try another sensor.",
+      "answers": [
+        {
+          "label": "Works",
+          "next": "ana_sol_use_other"
+        },
+        {
+          "label": "Doesn't work",
+          "next": "ana_deadend_002"
+        }
+      ]
+    },
+    "dig_deadend_001": {
+      "id": "dig_deadend_001",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "No recorded fix for this path. Log this problem for the electrical lead.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "dig_sol_supply_power": {
+      "id": "dig_sol_supply_power",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Supply the correct power to the sensor.",
+      "tags": [
+        "power",
+        "sensor"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_supply_voltage": {
+      "id": "dig_sol_supply_voltage",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Supply the correct voltage level (check sensor datasheet \u2014 5 V from ECU or 13 V from PDM).",
+      "tags": [
+        "power",
+        "voltage"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_configure_di": {
+      "id": "dig_sol_configure_di",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Configure the correct digital input in MoTeC and ensure pullup control is on.",
+      "tags": [
+        "motec",
+        "digital-input",
+        "pullup"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_switch_pin": {
+      "id": "dig_sol_switch_pin",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Either switch M1 Tune to use that pin, or move the wire to the correct pin. Ensure pullup control is on.",
+      "tags": [
+        "motec",
+        "pinout",
+        "pullup"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_shear_rewire": {
+      "id": "dig_sol_shear_rewire",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Likely a shear in the signal wire \u2014 rewire the signal wire.",
+      "tags": [
+        "signal",
+        "wiring",
+        "shear"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_secure_ground": {
+      "id": "dig_sol_secure_ground",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Secure the ground bolts.",
+      "tags": [
+        "ground"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_rewire_ground": {
+      "id": "dig_sol_rewire_ground",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Rewire the ground wire \u2014 shear found along the ground path.",
+      "tags": [
+        "ground",
+        "wiring",
+        "shear"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_repin": {
+      "id": "dig_sol_repin",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Re-pin or re-crimp the ring terminal \u2014 termination is bad.",
+      "tags": [
+        "connector",
+        "termination"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_spacer": {
+      "id": "dig_sol_spacer",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Add a spacer \u2014 DTM connector contact is improper.",
+      "tags": [
+        "dtm",
+        "connector"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_double_check": {
+      "id": "dig_sol_double_check",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Sensor works on the bench \u2014 you likely mis-checked power, ground, signal, or pinout. Double-check all four.",
+      "tags": [
+        "bench-test"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_sol_use_other": {
+      "id": "dig_sol_use_other",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Use the working replacement sensor on the car setup.",
+      "tags": [
+        "sensor",
+        "spares"
+      ],
+      "ifUnsolved": "dig_deadend_001"
+    },
+    "dig_deadend_002": {
+      "id": "dig_deadend_002",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "No recorded fix after bench test and sensor swap.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "dig_001": {
+      "id": "dig_001",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is the sensor getting power? (Check with multimeter)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "dig_002"
+        },
+        {
+          "label": "No",
+          "next": "dig_sol_supply_power"
+        }
+      ]
+    },
+    "dig_002": {
+      "id": "dig_002",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is it the right voltage level? (Check sensor datasheet \u2014 5 V from ECU or 13 V from PDM)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "dig_003"
+        },
+        {
+          "label": "No",
+          "next": "dig_sol_supply_voltage"
+        }
+      ]
+    },
+    "dig_003": {
+      "id": "dig_003",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is the sensor grounded? (Check continuity to chassis ground)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "dig_004"
+        },
+        {
+          "label": "No",
+          "next": "dig_005"
+        }
+      ]
+    },
+    "dig_004": {
+      "id": "dig_004",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is there continuity from the MoTeC connector to the sensor signal wire?",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "dig_006"
+        },
+        {
+          "label": "No",
+          "next": "dig_007"
+        }
+      ]
+    },
+    "dig_006": {
+      "id": "dig_006",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is it configured to the correct digital input in MoTeC with pullup control on? (Check MoTeC pinout)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "dig_act_bench"
+        },
+        {
+          "label": "No",
+          "next": "dig_sol_configure_di"
+        }
+      ]
+    },
+    "dig_007": {
+      "id": "dig_007",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is there continuity to any other MoTeC pins?",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "dig_sol_switch_pin"
+        },
+        {
+          "label": "No",
+          "next": "dig_sol_shear_rewire"
+        }
+      ]
+    },
+    "dig_005": {
+      "id": "dig_005",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Are the ground bolts secure?",
+      "answers": [
+        {
+          "label": "Secure",
+          "next": "dig_008"
+        },
+        {
+          "label": "Not secure",
+          "next": "dig_sol_secure_ground"
+        }
+      ]
+    },
+    "dig_008": {
+      "id": "dig_008",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Check for any shears along the ground wire.",
+      "answers": [
+        {
+          "label": "Sheared",
+          "next": "dig_sol_rewire_ground"
+        },
+        {
+          "label": "Not sheared",
+          "next": "dig_009"
+        }
+      ]
+    },
+    "dig_009": {
+      "id": "dig_009",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Are both sides of the wires properly terminated with pins or ring terminals?",
+      "answers": [
+        {
+          "label": "Properly terminated",
+          "next": "dig_010"
+        },
+        {
+          "label": "Bad termination",
+          "next": "dig_sol_repin"
+        }
+      ]
+    },
+    "dig_010": {
+      "id": "dig_010",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Is there proper contact between both sides of the DTM connector?",
+      "answers": [
+        {
+          "label": "Proper",
+          "next": "dig_deadend_001"
+        },
+        {
+          "label": "Improper",
+          "next": "dig_sol_spacer"
+        }
+      ]
+    },
+    "dig_act_bench": {
+      "id": "dig_act_bench",
+      "type": "action",
+      "subsystem": "sensor",
+      "text": "Try the sensor with the bench power supply and a multimeter.",
+      "confirmation": "Done \u2014 tested on bench",
+      "next": "dig_011"
+    },
+    "dig_011": {
+      "id": "dig_011",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Does the sensor work on the bench?",
+      "answers": [
+        {
+          "label": "Works",
+          "next": "dig_sol_double_check"
+        },
+        {
+          "label": "Doesn't work",
+          "next": "dig_012"
+        }
+      ]
+    },
+    "dig_012": {
+      "id": "dig_012",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Try another sensor.",
+      "answers": [
+        {
+          "label": "Works",
+          "next": "dig_sol_use_other"
+        },
+        {
+          "label": "Doesn't work",
+          "next": "dig_deadend_002"
+        }
+      ]
+    },
+    "sensor_deadend_paddles": {
+      "id": "sensor_deadend_paddles",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Shift paddles branch not yet documented \u2014 log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "sensor_deadend_pump": {
+      "id": "sensor_deadend_pump",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Water pump branch not yet documented \u2014 log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "sensor_deadend_fans": {
+      "id": "sensor_deadend_fans",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Fans branch not yet documented \u2014 log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "cans_deadend_001": {
+      "id": "cans_deadend_001",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "No recorded fix for this CAN sensor path.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "cans_sol_misconfigured": {
+      "id": "cans_sol_misconfigured",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Likely misconfigured CAN ID, bus, and/or baud rate \u2014 check datasheets and configure in MoTeC.",
+      "tags": [
+        "can",
+        "motec",
+        "configuration"
+      ],
+      "ifUnsolved": "cans_deadend_001"
+    },
+    "cans_sol_resistor_recrimp": {
+      "id": "cans_sol_resistor_recrimp",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Termination resistor is likely loose or fell out \u2014 re-crimp CAN Hi and Lo MoTeC pins with the 120 \u03a9 resistor.",
+      "tags": [
+        "can",
+        "termination",
+        "motec"
+      ],
+      "ifUnsolved": "cans_deadend_001"
+    },
+    "cans_sol_use_other": {
+      "id": "cans_sol_use_other",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Use the other sensor on the car setup.",
+      "tags": [
+        "can",
+        "sensor",
+        "spares"
+      ],
+      "ifUnsolved": "cans_deadend_001"
+    },
+    "cans_001": {
+      "id": "cans_001",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "What is the CAN bus diagnostic?",
+      "answers": [
+        {
+          "label": "Bus off",
+          "next": "cans_act_busoff"
+        },
+        {
+          "label": "Bus OK (but no readings)",
+          "next": "cans_010"
+        }
+      ]
+    },
+    "cans_act_busoff": {
+      "id": "cans_act_busoff",
+      "type": "action",
+      "subsystem": "sensor",
+      "text": "Follow analog-style power, ground, and signal checks. Additionally check continuity, then measure resistance across CAN Hi and Lo.",
+      "confirmation": "Done \u2014 checks complete",
+      "next": "ana_001"
+    },
+    "cans_010": {
+      "id": "cans_010",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Are you seeing messages of the expected CAN ID on the correct bus and baud rate in CAN Monitor? (Use MoTeC Utilities)",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "cans_sol_misconfigured"
+        },
+        {
+          "label": "No",
+          "next": "cans_011"
+        }
+      ]
+    },
+    "cans_011": {
+      "id": "cans_011",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Check resistance across CAN Hi and Lo \u2014 what is it reading?",
+      "answers": [
+        {
+          "label": "100\u2013120 \u03a9 (correct)",
+          "next": "cans_012"
+        },
+        {
+          "label": "Anything else",
+          "next": "cans_sol_resistor_recrimp"
+        }
+      ]
+    },
+    "cans_012": {
+      "id": "cans_012",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Try another sensor.",
+      "answers": [
+        {
+          "label": "Works",
+          "next": "cans_sol_use_other"
+        },
+        {
+          "label": "Doesn't work",
+          "next": "cans_deadend_001"
+        }
+      ]
+    },
+    "shift_deadend_denied": {
+      "id": "shift_deadend_denied",
+      "type": "solution",
+      "subsystem": "sensor",
+      "text": "Shift request denied \u2014 no documented fix yet. Log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "shift_act_paddle": {
+      "id": "shift_act_paddle",
+      "type": "action",
+      "subsystem": "sensor",
+      "text": "No shift requests in MoTeC \u2014 this is a shift paddle issue. Inspect shift paddles (see paddles branch).",
+      "confirmation": "Done \u2014 inspected paddles",
+      "next": "sensor_deadend_paddles"
+    },
+    "shift_act_signal": {
+      "id": "shift_act_signal",
+      "type": "action",
+      "subsystem": "sensor",
+      "text": "Shift requests show OK \u2014 check power, ground, and signal continuity for both upshift and downshift signals.",
+      "confirmation": "Done \u2014 starting signal path checks",
+      "next": "ana_001"
+    },
+    "shift_001": {
+      "id": "shift_001",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "Are you seeing shift requests in MoTeC?",
+      "answers": [
+        {
+          "label": "Yes",
+          "next": "shift_002"
+        },
+        {
+          "label": "No",
+          "next": "shift_act_paddle"
+        }
+      ]
+    },
+    "shift_002": {
+      "id": "shift_002",
+      "type": "question",
+      "subsystem": "sensor",
+      "text": "What are the shift request statuses showing?",
+      "answers": [
+        {
+          "label": "OK",
+          "next": "shift_act_signal"
+        },
+        {
+          "label": "Denied",
+          "next": "shift_deadend_denied"
+        }
+      ]
     },
     "sensor_001": {
       "id": "sensor_001",
       "type": "question",
       "subsystem": "sensor",
-      "text": "Which sensor is affected?",
+      "text": "What kind of sensor/actuator is it?",
       "answers": [
-        { "label": "APPS", "next": "sensor_002" },
-        { "label": "TPS", "next": "sensor_002" },
-        { "label": "Other", "next": "sensor_002" }
+        {
+          "label": "Analog voltage (TPS, brake pressure, 0\u20135 V)",
+          "next": "ana_001"
+        },
+        {
+          "label": "Digital input (wheel speed, on/off)",
+          "next": "dig_001"
+        },
+        {
+          "label": "CAN sensor (lambda, IMU, 4-wire)",
+          "next": "cans_001"
+        },
+        {
+          "label": "Shift actuator (by the engine)",
+          "next": "shift_001"
+        },
+        {
+          "label": "Shift paddles (steering wheel)",
+          "next": "sensor_deadend_paddles"
+        },
+        {
+          "label": "Water pump",
+          "next": "sensor_deadend_pump"
+        },
+        {
+          "label": "Fans",
+          "next": "sensor_deadend_fans"
+        }
       ]
     },
-    "sensor_002": {
-      "id": "sensor_002",
-      "type": "question",
-      "subsystem": "sensor",
-      "text": "Is the signal reading 0V or stuck at a fixed value?",
-      "answers": [
-        { "label": "0V", "next": "sensor_deadend_001" },
-        { "label": "Stuck", "next": "sensor_deadend_001" },
-        { "label": "Not sure", "next": "sensor_deadend_001" }
-      ]
-    },
-    "sensor_deadend_001": {
-      "id": "sensor_deadend_001",
+    "power_deadend_starter_yes": {
+      "id": "power_deadend_starter_yes",
       "type": "solution",
-      "subsystem": "sensor",
-      "text": "No recorded fix for this sensor failure path.",
+      "subsystem": "power",
+      "text": "Starter button lit but car won't start \u2014 branch not yet documented. Log this problem.",
       "tags": [],
       "ifUnsolved": null
     },
-    "can_001": {
-      "id": "can_001",
-      "type": "question",
-      "subsystem": "can",
-      "text": "Which node is missing from the bus?",
-      "answers": [
-        { "label": "ECU", "next": "can_002" },
-        { "label": "DAQ / logger", "next": "can_002" },
-        { "label": "Multiple / unknown", "next": "can_002" }
-      ]
-    },
-    "can_002": {
-      "id": "can_002",
-      "type": "question",
-      "subsystem": "can",
-      "text": "Is the bus properly terminated at both ends?",
-      "answers": [
-        { "label": "Yes", "next": "can_deadend_001" },
-        { "label": "No", "next": "can_deadend_001" },
-        { "label": "Not sure", "next": "can_deadend_001" }
-      ]
-    },
-    "can_deadend_001": {
-      "id": "can_deadend_001",
+    "power_deadend_starter_no": {
+      "id": "power_deadend_starter_no",
       "type": "solution",
-      "subsystem": "can",
-      "text": "No recorded fix for this CAN failure path.",
+      "subsystem": "power",
+      "text": "Starter button not lit \u2014 branch not yet documented. Log this problem.",
       "tags": [],
       "ifUnsolved": null
     },
-    "shutdown_001": {
-      "id": "shutdown_001",
+    "power_001": {
+      "id": "power_001",
       "type": "question",
-      "subsystem": "shutdown",
-      "text": "Which shutdown segment is suspect?",
+      "subsystem": "power",
+      "text": "Is the starter button lighting up?",
       "answers": [
-        { "label": "BOTS", "next": "shutdown_002" },
-        { "label": "BSPD", "next": "shutdown_002" },
-        { "label": "IMD / HV", "next": "shutdown_002" }
+        {
+          "label": "Yes",
+          "next": "power_deadend_starter_yes"
+        },
+        {
+          "label": "No",
+          "next": "power_deadend_starter_no"
+        }
       ]
     },
-    "shutdown_002": {
-      "id": "shutdown_002",
-      "type": "question",
-      "subsystem": "shutdown",
-      "text": "Is the fault latched or intermittent?",
-      "answers": [
-        { "label": "Latched", "next": "shutdown_deadend_001" },
-        { "label": "Intermittent", "next": "shutdown_deadend_001" }
-      ]
-    },
-    "shutdown_deadend_001": {
-      "id": "shutdown_deadend_001",
+    "power_deadend_sharp": {
+      "id": "power_deadend_sharp",
       "type": "solution",
-      "subsystem": "shutdown",
-      "text": "No recorded fix for this shutdown circuit failure path.",
+      "subsystem": "power",
+      "text": "Sharp voltage drop-off \u2014 branch not yet documented. Log this problem.",
       "tags": [],
       "ifUnsolved": null
     },
-    "eth_001": {
-      "id": "eth_001",
-      "type": "question",
-      "subsystem": "eth",
-      "text": "Is the Ethernet link light on at the DAQ?",
-      "answers": [
-        { "label": "Yes", "next": "eth_002" },
-        { "label": "No", "next": "eth_002" }
-      ]
-    },
-    "eth_002": {
-      "id": "eth_002",
-      "type": "question",
-      "subsystem": "eth",
-      "text": "Is the DAQ on the correct subnet?",
-      "answers": [
-        { "label": "Yes", "next": "eth_deadend_001" },
-        { "label": "No", "next": "eth_deadend_001" },
-        { "label": "Not sure", "next": "eth_deadend_001" }
-      ]
-    },
-    "eth_deadend_001": {
-      "id": "eth_deadend_001",
+    "power_deadend_decay": {
+      "id": "power_deadend_decay",
       "type": "solution",
-      "subsystem": "eth",
-      "text": "No recorded fix for this Ethernet / DAQ failure path.",
+      "subsystem": "power",
+      "text": "Steady voltage decay \u2014 branch not yet documented. Log this problem.",
       "tags": [],
       "ifUnsolved": null
+    },
+    "power_010": {
+      "id": "power_010",
+      "type": "question",
+      "subsystem": "power",
+      "text": "Check voltage logs \u2014 what do you see?",
+      "answers": [
+        {
+          "label": "Sharp drop-off",
+          "next": "power_deadend_sharp"
+        },
+        {
+          "label": "Steady decay",
+          "next": "power_deadend_decay"
+        }
+      ]
+    },
+    "drive_deadend_shift": {
+      "id": "drive_deadend_shift",
+      "type": "solution",
+      "subsystem": "drive",
+      "text": "Shifting feature branch not yet documented. Log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "drive_deadend_launch": {
+      "id": "drive_deadend_launch",
+      "type": "solution",
+      "subsystem": "drive",
+      "text": "Launch control branch not yet documented. Log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "drive_deadend_dashboard": {
+      "id": "drive_deadend_dashboard",
+      "type": "solution",
+      "subsystem": "drive",
+      "text": "Dash branch not yet documented. Log this problem.",
+      "tags": [],
+      "ifUnsolved": null
+    },
+    "drive_001": {
+      "id": "drive_001",
+      "type": "question",
+      "subsystem": "drive",
+      "text": "What feature isn't working?",
+      "answers": [
+        {
+          "label": "Shifting",
+          "next": "drive_deadend_shift"
+        },
+        {
+          "label": "Launch control",
+          "next": "drive_deadend_launch"
+        },
+        {
+          "label": "Dash",
+          "next": "drive_deadend_dashboard"
+        }
+      ]
     }
   }
 }

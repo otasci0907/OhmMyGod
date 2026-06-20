@@ -35,6 +35,7 @@ ohmmygod/
     MEMBER_GUIDE.md    # User manual for team members
   scripts/
     validate-tree.js
+    generate-debug-tree.py  # Regenerate tree.json from PDF/outline structure
     install-hooks.sh
   .github/workflows/
     pages.yml          # GitHub Pages deploy + tree validation
