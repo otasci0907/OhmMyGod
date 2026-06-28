@@ -1,1 +1,19 @@
-[]
+[
+  {
+    "id": "case_001",
+    "timestamp": "2026-06-28T22:41:01.431Z",
+    "submittedBy": "Jason Li",
+    "subsystem": "drive",
+    "path": [
+      "root",
+      "drive_001",
+      "drive_deadend_launch"
+    ],
+    "solutionsAttempted": [],
+    "resolvedBySolution": null,
+    "problemDescription": "Launch Control would stay on for the entire duration of endurance",
+    "fix": "Change exit rpm to be lower",
+    "tags": [],
+    "status": "unreviewed"
+  }
+]
